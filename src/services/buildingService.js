@@ -48,24 +48,53 @@ export const buildingService = {
   },
 
   async update(id, updates) {
+    // Validate that required fields are present
+    if (updates.building_name === undefined || updates.building_name === null || updates.building_name === '') {
+      throw new Error('Building name is required and cannot be empty')
+    }
+    if (updates.building_code === undefined || updates.building_code === null || updates.building_code === '') {
+      throw new Error('Building code is required and cannot be empty')
+    }
+    if (updates.latitude === undefined || updates.latitude === null || updates.latitude === '') {
+      throw new Error('Latitude is required and cannot be empty')
+    }
+    if (updates.longitude === undefined || updates.longitude === null || updates.longitude === '') {
+      throw new Error('Longitude is required and cannot be empty')
+    }
+
     // Map the form fields to database fields
+    // Required fields - validated above, so we know they exist
     const buildingData = {
       name: updates.building_name,
-      width_meters: updates.width_meters ? parseFloat(updates.width_meters) : undefined,
-      height_meters: updates.height_meters ? parseFloat(updates.height_meters) : undefined,
-      rotation_degrees: updates.rotation_degrees !== undefined ? parseFloat(updates.rotation_degrees) : undefined,
       code: updates.building_code,
-      description: updates.description || null,
       latitude: parseFloat(updates.latitude),
       longitude: parseFloat(updates.longitude),
-      category: updates.category || 'academic',
-      image_url: updates.image_url || null,
     }
-    
-    // Remove undefined values
-    Object.keys(buildingData).forEach(key => 
-      buildingData[key] === undefined && delete buildingData[key]
-    )
+
+    // Optional fields - only include if provided
+    if (updates.width_meters !== undefined && updates.width_meters !== null && updates.width_meters !== '') {
+      buildingData.width_meters = parseFloat(updates.width_meters)
+    }
+    if (updates.height_meters !== undefined && updates.height_meters !== null && updates.height_meters !== '') {
+      buildingData.height_meters = parseFloat(updates.height_meters)
+    }
+    if (updates.rotation_degrees !== undefined && updates.rotation_degrees !== null && updates.rotation_degrees !== '') {
+      buildingData.rotation_degrees = parseFloat(updates.rotation_degrees)
+    }
+    if (updates.description !== undefined) {
+      buildingData.description = updates.description || null
+    }
+    if (updates.category !== undefined && updates.category !== null) {
+      buildingData.category = updates.category
+    }
+    if (updates.image_url !== undefined) {
+      buildingData.image_url = updates.image_url || null
+    }
+
+    // Ensure we have at least one field to update
+    if (Object.keys(buildingData).length === 0) {
+      throw new Error('No valid fields provided for update')
+    }
 
     const { data, error } = await supabase
       .from('buildings')

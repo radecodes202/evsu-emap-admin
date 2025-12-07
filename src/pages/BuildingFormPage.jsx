@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {
@@ -13,6 +13,10 @@ import {
   Alert,
   CircularProgress,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  FormHelperText,
 } from '@mui/material';
 import { MapContainer, TileLayer, Rectangle, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -131,6 +135,7 @@ export default function BuildingFormPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     setValue,
     watch,
@@ -184,14 +189,31 @@ export default function BuildingFormPage() {
   const updateMutation = useUpdateBuilding();
 
   const onSubmit = (formData) => {
+    // Ensure all required fields are present and validated
+    if (!formData.building_name || !formData.building_code || 
+        formData.latitude === undefined || formData.longitude === undefined) {
+      console.error('Missing required fields in form submission:', formData);
+      return; // Form validation should prevent this, but fail safely
+    }
+
     const payload = {
-      ...formData,
+      building_name: formData.building_name.trim(), // Ensure non-empty after trim
+      building_code: formData.building_code.trim(),
       latitude: formData.latitude.toString(),
       longitude: formData.longitude.toString(),
       width_meters: formData.width_meters?.toString() || '20',
       height_meters: formData.height_meters?.toString() || '20',
       rotation_degrees: formData.rotation_degrees?.toString() || '0',
+      category: formData.category || 'academic', // Category is required, but fallback to academic
+      description: formData.description || '',
+      image_url: formData.image_url || null,
     };
+
+    // Validate required fields are not empty after processing
+    if (!payload.building_name || !payload.building_code) {
+      console.error('Required fields are empty after processing:', payload);
+      return;
+    }
 
     if (isEdit) {
       updateMutation.mutate(
@@ -259,21 +281,33 @@ export default function BuildingFormPage() {
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    select
-                    label="Category"
-                    {...register('category')}
-                    error={!!errors.category}
-                    helperText={errors.category?.message}
-                  >
-                    <MenuItem value="academic">Academic</MenuItem>
-                    <MenuItem value="administrative">Administrative</MenuItem>
-                    <MenuItem value="facility">Facility</MenuItem>
-                    <MenuItem value="sports">Sports</MenuItem>
-                    <MenuItem value="residential">Residential</MenuItem>
-                    <MenuItem value="other">Other</MenuItem>
-                  </TextField>
+                  <Controller
+                    name="category"
+                    control={control}
+                    defaultValue="academic"
+                    render={({ field }) => (
+                      <FormControl fullWidth error={!!errors.category}>
+                        <InputLabel>Category *</InputLabel>
+                        <Select
+                          value={field.value ?? 'academic'}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          label="Category *"
+                        >
+                          <MenuItem value="academic">Academic</MenuItem>
+                          <MenuItem value="administrative">Administrative</MenuItem>
+                          <MenuItem value="facility">Facility</MenuItem>
+                          <MenuItem value="sports">Sports</MenuItem>
+                          <MenuItem value="residential">Residential</MenuItem>
+                          <MenuItem value="other">Other</MenuItem>
+                        </Select>
+                        {errors.category && (
+                          <FormHelperText>{errors.category.message}</FormHelperText>
+                        )}
+                      </FormControl>
+                    )}
+                  />
                 </Grid>
                 <Grid item xs={12}>
                   <TextField

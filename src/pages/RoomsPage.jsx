@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -24,11 +24,15 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  TextField,
+  InputAdornment,
+  Grid,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import RoomIcon from '@mui/icons-material/Room';
+import SearchIcon from '@mui/icons-material/Search';
 import { useAllLocations, useDeleteLocation } from '../hooks/useLocations';
 import { useBuildings } from '../hooks/useBuildings';
 
@@ -37,6 +41,8 @@ export default function RoomsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState(null);
   const [buildingFilter, setBuildingFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   const { data: rooms = [], isLoading, error } = useAllLocations();
   const { data: buildings = [] } = useBuildings();
@@ -68,10 +74,34 @@ export default function RoomsPage() {
     navigate(`/rooms/edit/${room.id}`);
   };
 
-  // Filter rooms by building
-  const filteredRooms = buildingFilter === 'all' 
-    ? rooms 
-    : rooms.filter(room => room.building_id === buildingFilter);
+  // Filter rooms by building, type, and search query
+  const filteredRooms = useMemo(() => {
+    let filtered = rooms;
+    
+    // Filter by building
+    if (buildingFilter !== 'all') {
+      filtered = filtered.filter(room => room.building_id === buildingFilter);
+    }
+    
+    // Filter by type
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(room => room.type === typeFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((room) =>
+        room.name?.toLowerCase().includes(query) ||
+        room.room_number?.toLowerCase().includes(query) ||
+        room.type?.toLowerCase().includes(query) ||
+        room.building?.name?.toLowerCase().includes(query) ||
+        room.building?.code?.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [rooms, buildingFilter, typeFilter, searchQuery]);
 
   if (isLoading) {
     return (
@@ -101,24 +131,9 @@ export default function RoomsPage() {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
-        <Typography variant="h4">Rooms & Locations</Typography>
-        <Box display="flex" gap={2} alignItems="center">
-          <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel>Filter by Building</InputLabel>
-            <Select
-              value={buildingFilter}
-              label="Filter by Building"
-              onChange={(e) => setBuildingFilter(e.target.value)}
-            >
-              <MenuItem value="all">All Buildings</MenuItem>
-              {buildings.map((building) => (
-                <MenuItem key={building.id} value={building.id}>
-                  {building.name} ({building.code})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+      <Box mb={3}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={2}>
+          <Typography variant="h4">Rooms & Locations</Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -127,6 +142,62 @@ export default function RoomsPage() {
             Add Room
           </Button>
         </Box>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Search rooms..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Building</InputLabel>
+              <Select
+                value={buildingFilter}
+                label="Building"
+                onChange={(e) => setBuildingFilter(e.target.value)}
+              >
+                <MenuItem value="all">All Buildings</MenuItem>
+                {buildings.map((building) => (
+                  <MenuItem key={building.id} value={building.id}>
+                    {building.name} ({building.code})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Room Type</InputLabel>
+              <Select
+                value={typeFilter}
+                label="Room Type"
+                onChange={(e) => setTypeFilter(e.target.value)}
+              >
+                <MenuItem value="all">All Types</MenuItem>
+                <MenuItem value="classroom">Classroom</MenuItem>
+                <MenuItem value="laboratory">Laboratory</MenuItem>
+                <MenuItem value="office">Office</MenuItem>
+                <MenuItem value="library">Library</MenuItem>
+                <MenuItem value="lecture-hall">Lecture Hall</MenuItem>
+                <MenuItem value="conference-room">Conference Room</MenuItem>
+                <MenuItem value="restroom">Restroom</MenuItem>
+                <MenuItem value="storage">Storage</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
       </Box>
 
       <TableContainer component={Paper}>
@@ -147,9 +218,13 @@ export default function RoomsPage() {
               <TableRow>
                 <TableCell colSpan={7} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                    {buildingFilter === 'all' 
+                    {rooms.length === 0
                       ? 'No rooms found. Click "Add Room" to create one.'
-                      : 'No rooms found in this building.'}
+                      : buildingFilter !== 'all' && !searchQuery
+                        ? 'No rooms found in this building.'
+                        : searchQuery && buildingFilter !== 'all'
+                          ? `No rooms match "${searchQuery}" in the selected building.`
+                          : `No rooms match "${searchQuery}".`}
                   </Typography>
                 </TableCell>
               </TableRow>

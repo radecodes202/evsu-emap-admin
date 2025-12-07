@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Box,
@@ -21,7 +21,9 @@ import {
   Grid,
   Card,
   CardContent,
+  InputAdornment,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { auditService } from '../services/auditService';
 
 export default function AuditTrailPage() {
@@ -30,12 +32,26 @@ export default function AuditTrailPage() {
     entity_type: '',
     user_email: '',
   });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: logs = [], isLoading, error } = useQuery({
     queryKey: ['audit_logs', filters],
     queryFn: () => auditService.getAll(filters),
     staleTime: 30 * 1000, // 30 seconds
   });
+
+  // Filter logs based on search query (client-side filtering on description, user_email, etc.)
+  const filteredLogs = useMemo(() => {
+    if (!searchQuery.trim()) return logs;
+    const query = searchQuery.toLowerCase();
+    return logs.filter((log) =>
+      log.description?.toLowerCase().includes(query) ||
+      log.user_email?.toLowerCase().includes(query) ||
+      log.entity_type?.toLowerCase().includes(query) ||
+      log.action_type?.toLowerCase().includes(query) ||
+      log.entity_id?.toString().includes(query)
+    );
+  }, [logs, searchQuery]);
 
   const actionColors = {
     CREATE: 'success',
@@ -144,6 +160,23 @@ export default function AuditTrailPage() {
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by description, user, entity..."
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth size="small">
               <InputLabel>Action Type</InputLabel>
@@ -205,16 +238,18 @@ export default function AuditTrailPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {logs.length === 0 ? (
+            {filteredLogs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                    No audit logs found.
+                    {logs.length === 0
+                      ? 'No audit logs found.'
+                      : `No logs match "${searchQuery}".`}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              logs.map((log) => (
+              filteredLogs.map((log) => (
                 <TableRow key={log.id} hover>
                   <TableCell>
                     <Typography variant="body2">

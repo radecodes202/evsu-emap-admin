@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -24,10 +24,12 @@ import {
   Select,
   FormControl,
   InputLabel,
+  InputAdornment,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
 import { useUsers, useCreateUser, useDeleteUser } from '../hooks/useUsers';
 
 export default function UsersPage() {
@@ -35,6 +37,7 @@ export default function UsersPage() {
   const [userToDelete, setUserToDelete] = useState(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'user' });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: users = [], isLoading, error } = useUsers();
   const createMutation = useCreateUser();
@@ -69,6 +72,18 @@ export default function UsersPage() {
     });
   };
 
+  // Filter users based on search query
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    const query = searchQuery.toLowerCase();
+    return users.filter((user) =>
+      user.email?.toLowerCase().includes(query) ||
+      user.name?.toLowerCase().includes(query) ||
+      user.role?.toLowerCase().includes(query) ||
+      user.id?.toString().includes(query)
+    );
+  }, [users, searchQuery]);
+
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -100,15 +115,31 @@ export default function UsersPage() {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
         <Typography variant="h4">Users</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          Add User
-        </Button>
+        <Box display="flex" gap={2} alignItems="center">
+          <TextField
+            size="small"
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ minWidth: 250 }}
+          />
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            Add User
+          </Button>
+        </Box>
       </Box>
 
       <TableContainer component={Paper}>
@@ -123,16 +154,18 @@ export default function UsersPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                    No users found. Click "Add User" to create one.
+                    {users.length === 0
+                      ? 'No users found. Click "Add User" to create one.'
+                      : `No users match "${searchQuery}".`}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              users.map((user) => (
+              filteredUsers.map((user) => (
                 <TableRow key={user.id} hover>
                   <TableCell>{user.id}</TableCell>
                   <TableCell>{user.name || 'N/A'}</TableCell>

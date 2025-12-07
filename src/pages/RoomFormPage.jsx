@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {
@@ -13,6 +13,10 @@ import {
   CircularProgress,
   MenuItem,
   Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  FormHelperText,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
@@ -44,7 +48,7 @@ export default function RoomFormPage() {
   const { id } = useParams();
   const isEditMode = !!id;
 
-  const { data: buildings = [], isLoading: buildingsLoading } = useBuildings();
+  const { data: buildings = [], isLoading: buildingsLoading, error: buildingsError } = useBuildings();
   const { data: room, isLoading: roomLoading } = useLocation(id);
   const createMutation = useCreateLocation();
   const updateMutation = useUpdateLocation();
@@ -52,9 +56,11 @@ export default function RoomFormPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
     setValue,
+    watch,
   } = useForm({
     resolver: yupResolver(roomSchema),
     defaultValues: {
@@ -131,25 +137,79 @@ export default function RoomFormPage() {
         {isEditMode ? 'Edit Room' : 'Add New Room'}
       </Typography>
 
+      {buildingsError && (
+        <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+          <Typography variant="body2">
+            Error loading buildings: {buildingsError.message}
+            <br />
+            Please make sure buildings exist before creating rooms.
+          </Typography>
+        </Alert>
+      )}
+
+      {!buildingsError && !buildingsLoading && buildings.length === 0 && (
+        <Alert severity="warning" sx={{ mt: 2, mb: 2 }}>
+          <Typography variant="body2">
+            <strong>No buildings found in the database.</strong>
+            <br />
+            Please create at least one building before adding rooms. Go to the <strong>Buildings</strong> page to create one.
+          </Typography>
+        </Alert>
+      )}
+
       <Paper sx={{ p: 3, mt: 2 }}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                select
-                label="Building"
-                {...register('building_id')}
-                error={!!errors.building_id}
-                helperText={errors.building_id?.message}
-                disabled={buildingsLoading}
-              >
-                {buildings.map((building) => (
-                  <MenuItem key={building.id} value={building.id}>
-                    {building.name} ({building.code})
-                  </MenuItem>
-                ))}
-              </TextField>
+              <Controller
+                name="building_id"
+                control={control}
+                defaultValue=""
+                rules={{ required: 'Building is required' }}
+                render={({ field }) => (
+                  <FormControl fullWidth error={!!errors.building_id} disabled={buildingsLoading || buildings.length === 0}>
+                    <InputLabel>Building *</InputLabel>
+                    <Select
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      label="Building *"
+                      disabled={buildingsLoading}
+                      displayEmpty
+                    >
+                      {buildingsLoading ? (
+                        <MenuItem value="" disabled>
+                          <em>Loading buildings...</em>
+                        </MenuItem>
+                      ) : buildings.length === 0 ? (
+                        <MenuItem value="" disabled>
+                          <em>No buildings available - Create a building first</em>
+                        </MenuItem>
+                      ) : (
+                        <>
+                          <MenuItem value="">
+                            <em>Select a building</em>
+                          </MenuItem>
+                          {buildings.map((building) => (
+                            <MenuItem key={building.id} value={building.id}>
+                              {building.name} ({building.code})
+                            </MenuItem>
+                          ))}
+                        </>
+                      )}
+                    </Select>
+                    {errors.building_id && (
+                      <FormHelperText>{errors.building_id.message}</FormHelperText>
+                    )}
+                    {!errors.building_id && (buildingsLoading || buildings.length === 0) && (
+                      <FormHelperText>
+                        {buildingsLoading ? 'Loading buildings...' : 'No buildings available. Create a building first.'}
+                      </FormHelperText>
+                    )}
+                  </FormControl>
+                )}
+              />
             </Grid>
 
             <Grid item xs={12} md={6}>
@@ -186,25 +246,43 @@ export default function RoomFormPage() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                select
-                label="Room Type"
-                {...register('type')}
-                error={!!errors.type}
-                helperText={errors.type?.message}
-              >
-                <MenuItem value="">Select Type</MenuItem>
-                <MenuItem value="classroom">Classroom</MenuItem>
-                <MenuItem value="laboratory">Laboratory</MenuItem>
-                <MenuItem value="office">Office</MenuItem>
-                <MenuItem value="library">Library</MenuItem>
-                <MenuItem value="lecture-hall">Lecture Hall</MenuItem>
-                <MenuItem value="conference-room">Conference Room</MenuItem>
-                <MenuItem value="restroom">Restroom</MenuItem>
-                <MenuItem value="storage">Storage</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </TextField>
+              <Controller
+                name="type"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <FormControl fullWidth error={!!errors.type}>
+                    <InputLabel>Room Type</InputLabel>
+                    <Select
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      label="Room Type"
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>Select Type</em>
+                      </MenuItem>
+                      <MenuItem value="classroom">Classroom</MenuItem>
+                      <MenuItem value="laboratory">Laboratory</MenuItem>
+                      <MenuItem value="office">Office</MenuItem>
+                      <MenuItem value="library">Library</MenuItem>
+                      <MenuItem value="lecture-hall">Lecture Hall</MenuItem>
+                      <MenuItem value="conference-room">Conference Room</MenuItem>
+                      <MenuItem value="restroom">Restroom</MenuItem>
+                      <MenuItem value="storage">Storage</MenuItem>
+                      <MenuItem value="other">Other</MenuItem>
+                    </Select>
+                    {errors.type && (
+                      <FormHelperText>{errors.type.message}</FormHelperText>
+                    )}
+                    {!errors.type && (
+                      <FormHelperText>Select the room type</FormHelperText>
+                    )}
+                  </FormControl>
+                )}
+              />
             </Grid>
 
             <Grid item xs={12} md={6}>

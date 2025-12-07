@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {
@@ -17,6 +17,7 @@ import {
   FormControl,
   InputLabel,
   Select,
+  FormHelperText,
   Switch,
   FormControlLabel,
   List,
@@ -75,6 +76,7 @@ export default function PathFormPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     setValue,
     watch,
@@ -213,19 +215,39 @@ export default function PathFormPage() {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <FormControl fullWidth>
-                    <InputLabel>Path Type</InputLabel>
-                    <Select
-                      label="Path Type"
-                      {...register('path_type')}
-                      error={!!errors.path_type}
-                    >
-                      <MenuItem value="walkway">Walkway</MenuItem>
-                      <MenuItem value="sidewalk">Sidewalk</MenuItem>
-                      <MenuItem value="path">Path</MenuItem>
-                      <MenuItem value="road">Road</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <Controller
+                    name="path_type"
+                    control={control}
+                    defaultValue="walkway"
+                    render={({ field }) => (
+                      <FormControl fullWidth error={!!errors.path_type}>
+                        <InputLabel>Path Type</InputLabel>
+                        <Select
+                          value={field.value ?? 'walkway'}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          label="Path Type"
+                          displayEmpty
+                        >
+                          <MenuItem value="walkway">Walkway</MenuItem>
+                          <MenuItem value="sidewalk">Sidewalk</MenuItem>
+                          <MenuItem value="path">Path</MenuItem>
+                          <MenuItem value="road">Road</MenuItem>
+                          <MenuItem value="indoor">Indoor</MenuItem>
+                          <MenuItem value="corridor">Corridor</MenuItem>
+                          <MenuItem value="stairs">Stairs</MenuItem>
+                          <MenuItem value="elevator">Elevator</MenuItem>
+                          <MenuItem value="ramp">Ramp</MenuItem>
+                          <MenuItem value="bridge">Bridge</MenuItem>
+                          <MenuItem value="other">Other</MenuItem>
+                        </Select>
+                        {errors.path_type && (
+                          <FormHelperText error>{errors.path_type.message}</FormHelperText>
+                        )}
+                      </FormControl>
+                    )}
+                  />
                 </Grid>
                 <Grid item xs={12}>
                   <FormControlLabel

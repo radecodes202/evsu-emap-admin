@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -20,23 +20,33 @@ import {
   DialogContentText,
   DialogActions,
   Chip,
+  TextField,
+  InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
 import { useBuildings, useDeleteBuilding } from '../hooks/useBuildings';
 
 export default function BuildingsPage() {
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [buildingToDelete, setBuildingToDelete] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const { data: buildings = [], isLoading, error } = useBuildings();
   const deleteMutation = useDeleteBuilding();
 
   const handleDeleteSuccess = () => {
-    setDeleteDialogOpen(false);
-    setBuildingToDelete(null);
+      setDeleteDialogOpen(false);
+      setBuildingToDelete(null);
   };
 
   const handleDeleteClick = (building) => {
@@ -51,6 +61,29 @@ export default function BuildingsPage() {
       });
     }
   };
+
+  // Filter buildings based on search query and category
+  const filteredBuildings = useMemo(() => {
+    let filtered = buildings;
+    
+    // Filter by category
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(building => building.category === categoryFilter);
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((building) => 
+        building.name?.toLowerCase().includes(query) ||
+        building.code?.toLowerCase().includes(query) ||
+        building.category?.toLowerCase().includes(query) ||
+        building.description?.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [buildings, searchQuery, categoryFilter]);
 
   if (isLoading) {
     return (
@@ -70,15 +103,53 @@ export default function BuildingsPage() {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Buildings</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/buildings/new')}
-        >
-          Add Building
-        </Button>
+      <Box mb={3}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={2}>
+          <Typography variant="h4">Buildings</Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/buildings/new')}
+          >
+            Add Building
+          </Button>
+        </Box>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Search buildings..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={categoryFilter}
+                label="Category"
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <MenuItem value="all">All Categories</MenuItem>
+                <MenuItem value="academic">Academic</MenuItem>
+                <MenuItem value="administrative">Administrative</MenuItem>
+                <MenuItem value="facility">Facility</MenuItem>
+                <MenuItem value="sports">Sports</MenuItem>
+                <MenuItem value="residential">Residential</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
       </Box>
 
       <TableContainer component={Paper}>
@@ -94,16 +165,18 @@ export default function BuildingsPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {buildings.length === 0 ? (
+            {filteredBuildings.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                    No buildings found. Click "Add Building" to create one.
+                    {buildings.length === 0
+                      ? 'No buildings found. Click "Add Building" to create one.'
+                      : `No buildings match "${searchQuery}".`}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              buildings.map((building) => (
+              filteredBuildings.map((building) => (
                 <TableRow key={building.id} hover>
                   <TableCell>
                     <Chip label={building.code} size="small" />

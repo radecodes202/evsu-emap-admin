@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { buildingsAPI, usersAPI, pathsAPI } from '../utils/api';
+import { useBuildings } from '../hooks/useBuildings';
+import { isSupabaseConfigured } from '../lib/supabase';
 import {
   Grid,
   Paper,
@@ -18,31 +18,70 @@ import {
 import StatCard from '../components/StatCard';
 
 export default function DashboardPage() {
-  const { data: buildingsData, isLoading: buildingsLoading } = useQuery({
-    queryKey: ['buildings'],
-    queryFn: () => buildingsAPI.getAll(),
-  });
-
-  const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => usersAPI.getAll(),
-    retry: false, // Don't retry if endpoint doesn't exist
-  });
-
-  const { data: pathsData, isLoading: pathsLoading } = useQuery({
-    queryKey: ['paths'],
-    queryFn: () => pathsAPI.getAll(),
-    retry: false, // Don't retry if endpoint doesn't exist
-  });
-
-  const buildings = buildingsData?.data?.data || [];
-  const users = usersData?.data?.data || [];
-  const paths = pathsData?.data?.data || [];
+  const { data: buildings = [], isLoading: buildingsLoading, error: buildingsError } = useBuildings();
+  
+  // Note: Users and Paths features are not yet migrated to Supabase
+  // These will show N/A until those features are implemented
+  const users = [];
+  const paths = [];
 
   if (buildingsLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Check if Supabase is configured
+  if (!isSupabaseConfigured()) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          Dashboard
+        </Typography>
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Supabase Not Configured
+          </Typography>
+          <Typography variant="body2">
+            Please configure your Supabase credentials in the .env file:
+            <br />
+            <code>VITE_SUPABASE_URL=your-project-url</code>
+            <br />
+            <code>VITE_SUPABASE_SERVICE_KEY=your-service-role-key</code>
+            <br />
+            <br />
+            See <code>SUPABASE_SETUP.md</code> for detailed instructions.
+          </Typography>
+        </Alert>
+      </Box>
+    );
+  }
+
+  if (buildingsError) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          Dashboard
+        </Typography>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Error Loading Buildings
+          </Typography>
+          <Typography variant="body2">
+            {buildingsError.message}
+            <br />
+            <br />
+            Possible causes:
+            <ul>
+              <li>Invalid Supabase credentials</li>
+              <li>Database tables not created (run database-setup.sql)</li>
+              <li>Network connection issue</li>
+            </ul>
+            Check the browser console for more details.
+          </Typography>
+        </Alert>
       </Box>
     );
   }
@@ -98,9 +137,9 @@ export default function DashboardPage() {
             {buildings.length > 0 ? (
               <Box component="ul" sx={{ pl: 2 }}>
                 {buildings.slice(0, 5).map((building) => (
-                  <li key={building.building_id}>
+                  <li key={building.id}>
                     <Typography variant="body2">
-                      {building.building_name} ({building.building_code})
+                      {building.name} ({building.code})
                     </Typography>
                   </li>
                 ))}

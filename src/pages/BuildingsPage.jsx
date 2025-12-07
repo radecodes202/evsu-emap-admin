@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Button,
@@ -25,29 +24,20 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { buildingsAPI } from '../utils/api';
+import { useBuildings, useDeleteBuilding } from '../hooks/useBuildings';
 
 export default function BuildingsPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [buildingToDelete, setBuildingToDelete] = useState(null);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['buildings'],
-    queryFn: () => buildingsAPI.getAll(),
-  });
+  const { data: buildings = [], isLoading, error } = useBuildings();
+  const deleteMutation = useDeleteBuilding();
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => buildingsAPI.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['buildings']);
-      setDeleteDialogOpen(false);
-      setBuildingToDelete(null);
-    },
-  });
-
-  const buildings = data?.data?.data || [];
+  const handleDeleteSuccess = () => {
+    setDeleteDialogOpen(false);
+    setBuildingToDelete(null);
+  };
 
   const handleDeleteClick = (building) => {
     setBuildingToDelete(building);
@@ -56,7 +46,9 @@ export default function BuildingsPage() {
 
   const handleDeleteConfirm = () => {
     if (buildingToDelete) {
-      deleteMutation.mutate(buildingToDelete.building_id);
+      deleteMutation.mutate(buildingToDelete.id, {
+        onSuccess: handleDeleteSuccess,
+      });
     }
   };
 
@@ -93,11 +85,10 @@ export default function BuildingsPage() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Name</TableCell>
               <TableCell>Code</TableCell>
+              <TableCell>Name</TableCell>
               <TableCell>Coordinates</TableCell>
-              <TableCell>Floors</TableCell>
+              <TableCell>Category</TableCell>
               <TableCell>Description</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
@@ -105,7 +96,7 @@ export default function BuildingsPage() {
           <TableBody>
             {buildings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={6} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
                     No buildings found. Click "Add Building" to create one.
                   </Typography>
@@ -113,15 +104,14 @@ export default function BuildingsPage() {
               </TableRow>
             ) : (
               buildings.map((building) => (
-                <TableRow key={building.building_id} hover>
-                  <TableCell>{building.building_id}</TableCell>
+                <TableRow key={building.id} hover>
                   <TableCell>
-                    <Typography variant="body2" fontWeight="medium">
-                      {building.building_name}
-                    </Typography>
+                    <Chip label={building.code} size="small" />
                   </TableCell>
                   <TableCell>
-                    <Chip label={building.building_code} size="small" />
+                    <Typography variant="body2" fontWeight="medium">
+                      {building.name}
+                    </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="caption" display="block">
@@ -131,7 +121,14 @@ export default function BuildingsPage() {
                       Lng: {building.longitude}
                     </Typography>
                   </TableCell>
-                  <TableCell>{building.floors}</TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={building.category} 
+                      size="small" 
+                      color="primary" 
+                      variant="outlined"
+                    />
+                  </TableCell>
                   <TableCell>
                     <Typography
                       variant="body2"
@@ -148,7 +145,7 @@ export default function BuildingsPage() {
                   <TableCell align="right">
                     <IconButton
                       size="small"
-                      onClick={() => navigate(`/buildings/edit/${building.building_id}`)}
+                      onClick={() => navigate(`/buildings/edit/${building.id}`)}
                       color="primary"
                     >
                       <EditIcon />
@@ -172,7 +169,7 @@ export default function BuildingsPage() {
         <DialogTitle>Delete Building</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete "{buildingToDelete?.building_name}"? This action
+            Are you sure you want to delete "{buildingToDelete?.name}"? This action
             cannot be undone.
           </DialogContentText>
         </DialogContent>

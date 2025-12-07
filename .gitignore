@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+# Allow .env.example as a template (this file can be committed)
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,3 +30,5 @@ dist-ssr
 *.sln
 *.sw?
 
+# Documentation files are allowed (they're safe to commit)
+# *.md

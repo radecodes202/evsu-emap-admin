@@ -18,7 +18,10 @@ const queryClient = new QueryClient({
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#800000', // Maroon color
+      light: '#a00000',
+      dark: '#500000',
+      contrastText: '#ffffff',
     },
     secondary: {
       main: '#dc004e',

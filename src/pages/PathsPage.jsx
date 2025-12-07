@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Button,
@@ -27,37 +26,21 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { pathsAPI } from '../utils/api';
+import { usePaths, useDeletePath, useUpdatePath } from '../hooks/usePaths';
 
 export default function PathsPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pathToDelete, setPathToDelete] = useState(null);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['paths'],
-    queryFn: () => pathsAPI.getAll(),
-    retry: false,
-  });
+  const { data: paths = [], isLoading, error } = usePaths();
+  const deleteMutation = useDeletePath();
+  const updateMutation = useUpdatePath();
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => pathsAPI.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['paths']);
-      setDeleteDialogOpen(false);
-      setPathToDelete(null);
-    },
-  });
-
-  const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, isActive }) => pathsAPI.update(id, { is_active: isActive }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['paths']);
-    },
-  });
-
-  const paths = data?.data?.data || [];
+  const handleDeleteSuccess = () => {
+    setDeleteDialogOpen(false);
+    setPathToDelete(null);
+  };
 
   const handleDeleteClick = (path) => {
     setPathToDelete(path);
@@ -66,14 +49,16 @@ export default function PathsPage() {
 
   const handleDeleteConfirm = () => {
     if (pathToDelete) {
-      deleteMutation.mutate(pathToDelete.path_id);
+      deleteMutation.mutate(pathToDelete.id, {
+        onSuccess: handleDeleteSuccess,
+      });
     }
   };
 
   const handleToggleActive = (path) => {
-    toggleActiveMutation.mutate({
-      id: path.path_id,
-      isActive: !path.is_active,
+    updateMutation.mutate({
+      id: path.id,
+      updates: { is_active: !path.is_active },
     });
   };
 
@@ -88,18 +73,19 @@ export default function PathsPage() {
   if (error) {
     return (
       <Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4">Paths & Walkways</Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/paths/new')}
-          >
-            Add Path
-          </Button>
-        </Box>
-        <Alert severity="warning">
-          Paths API endpoint may not be available. Error: {error.message}
+        <Typography variant="h4" gutterBottom>
+          Paths & Walkways
+        </Typography>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Error Loading Paths
+          </Typography>
+          <Typography variant="body2">
+            {error.message}
+            <br />
+            <br />
+            Make sure you've run the <code>database-migration-users-paths.sql</code> script in Supabase.
+          </Typography>
         </Alert>
       </Box>
     );
@@ -122,7 +108,6 @@ export default function PathsPage() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Type</TableCell>
               <TableCell>Waypoints</TableCell>
@@ -133,7 +118,7 @@ export default function PathsPage() {
           <TableBody>
             {paths.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={5} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
                     No paths found. Click "Add Path" to create one.
                   </Typography>
@@ -141,11 +126,10 @@ export default function PathsPage() {
               </TableRow>
             ) : (
               paths.map((path) => (
-                <TableRow key={path.path_id} hover>
-                  <TableCell>{path.path_id}</TableCell>
+                <TableRow key={path.id} hover>
                   <TableCell>
                     <Typography variant="body2" fontWeight="medium">
-                      {path.path_name}
+                      {path.path_name || 'Unnamed Path'}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -159,12 +143,13 @@ export default function PathsPage() {
                       checked={path.is_active !== false}
                       onChange={() => handleToggleActive(path)}
                       size="small"
+                      disabled={updateMutation.isLoading}
                     />
                   </TableCell>
                   <TableCell align="right">
                     <IconButton
                       size="small"
-                      onClick={() => navigate(`/paths/edit/${path.path_id}`)}
+                      onClick={() => navigate(`/paths/edit/${path.id}`)}
                       color="primary"
                     >
                       <EditIcon />
@@ -188,7 +173,7 @@ export default function PathsPage() {
         <DialogTitle>Delete Path</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete "{pathToDelete?.path_name}"? This action cannot be
+            Are you sure you want to delete "{pathToDelete?.path_name || 'this path'}"? This action cannot be
             undone. All waypoints associated with this path will also be deleted.
           </DialogContentText>
         </DialogContent>

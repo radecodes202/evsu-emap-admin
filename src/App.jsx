@@ -12,6 +12,12 @@ import ChatbotPage from './pages/ChatbotPage';
 import SettingsPage from './pages/SettingsPage';
 import PathsPage from './pages/PathsPage';
 import PathFormPage from './pages/PathFormPage';
+import RoomsPage from './pages/RoomsPage';
+import RoomFormPage from './pages/RoomFormPage';
+import AboutPage from './pages/AboutPage';
+import HelpPage from './pages/HelpPage';
+import AuditTrailPage from './pages/AuditTrailPage';
+import FeedbackPage from './pages/FeedbackPage';
 
 function UnauthorizedPage() {
   return (
@@ -46,8 +52,15 @@ function App() {
           <Route path="paths" element={<PathsPage />} />
           <Route path="paths/new" element={<PathFormPage />} />
           <Route path="paths/edit/:id" element={<PathFormPage />} />
+          <Route path="rooms" element={<RoomsPage />} />
+          <Route path="rooms/new" element={<RoomFormPage />} />
+          <Route path="rooms/edit/:id" element={<RoomFormPage />} />
           <Route path="chatbot" element={<ChatbotPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="audit-trail" element={<AuditTrailPage />} />
+          <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="help" element={<HelpPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

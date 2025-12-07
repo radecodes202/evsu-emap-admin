@@ -25,6 +25,11 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import ChatIcon from '@mui/icons-material/Chat';
 import MapIcon from '@mui/icons-material/Map';
 import RouteIcon from '@mui/icons-material/Route';
+import RoomIcon from '@mui/icons-material/Room';
+import HelpIcon from '@mui/icons-material/Help';
+import InfoIcon from '@mui/icons-material/Info';
+import HistoryIcon from '@mui/icons-material/History';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuth } from '../../context/AuthContext';
@@ -34,11 +39,16 @@ const drawerWidth = 240;
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Buildings', icon: <BusinessIcon />, path: '/buildings' },
+  { text: 'Rooms & Locations', icon: <RoomIcon />, path: '/rooms' },
   { text: 'Paths & Walkways', icon: <RouteIcon />, path: '/paths' },
   { text: 'Users', icon: <PeopleIcon />, path: '/users' },
   { text: 'Campus Config', icon: <MapIcon />, path: '/campus-config' },
   { text: 'Chatbot', icon: <ChatIcon />, path: '/chatbot' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+  { text: 'Audit Trail', icon: <HistoryIcon />, path: '/audit-trail' },
+  { text: 'Feedback', icon: <FeedbackIcon />, path: '/feedback' },
+  { text: 'Help', icon: <HelpIcon />, path: '/help' },
+  { text: 'About', icon: <InfoIcon />, path: '/about' },
 ];
 
 export default function DashboardLayout() {

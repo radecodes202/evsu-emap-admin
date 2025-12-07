@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../utils/api';
 
 const AuthContext = createContext(null);
 
@@ -34,55 +33,44 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await authAPI.login(email, password);
-      console.log('Login response:', response.data); // Debug log
+      // Simple local authentication for admin panel
+      // In production, you should use Supabase Auth or another secure authentication method
+      // For now, using a simple check (you can configure this in environment variables)
+      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@evsu.edu.ph';
+      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
       
-      // Handle different response formats
-      const responseData = response.data;
-      const userData = responseData.user || responseData.data?.user;
-      const token = responseData.token || responseData.data?.token;
-      
-      // Check if login was successful
-      const isSuccess = responseData.success === true || (userData && token);
-      
-      if (isSuccess && userData && token) {
-        localStorage.setItem('token', token);
+      if (email === adminEmail && password === adminPassword) {
+        const userData = {
+          id: '1',
+          email: email,
+          name: 'Administrator',
+          role: 'admin',
+          isAdmin: true,
+        };
+        
+        // Store user data in localStorage
         localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', 'local-admin-token'); // Simple token for local auth
         setUser(userData);
         return { success: true };
       } else {
-        const errorMsg = responseData.message || responseData.error || 'Login failed. Invalid response format.';
-        console.error('Login failed:', errorMsg, responseData);
-        return { success: false, message: errorMsg };
+        return { 
+          success: false, 
+          message: 'Invalid email or password. Please check your credentials.' 
+        };
       }
     } catch (error) {
       console.error('Login error:', error);
-      
-      // More detailed error messages
-      let errorMessage = 'Login failed. Please try again.';
-      
-      if (error.response) {
-        // Server responded with error status
-        errorMessage = error.response.data?.message || 
-                      error.response.data?.error || 
-                      `Server error: ${error.response.status} ${error.response.statusText}`;
-      } else if (error.request) {
-        // Request was made but no response received
-        errorMessage = 'No response from server. Please check if the API server is running and the URL is correct.';
-      } else {
-        // Something else happened
-        errorMessage = error.message || 'Network error. Please check your connection.';
-      }
-      
       return {
         success: false,
-        message: errorMessage,
+        message: 'An error occurred during login. Please try again.',
       };
     }
   };
 
   const logout = () => {
-    authAPI.logout();
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     setUser(null);
   };
 

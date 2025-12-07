@@ -107,8 +107,8 @@ export default function ChatbotPage() {
             </Typography>
 
             {responsesData?.error && (
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                Chatbot responses API may not be available. This is a demo interface.
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Chatbot responses feature has not been migrated to Supabase yet. This is a demo interface.
               </Alert>
             )}
 
@@ -184,8 +184,8 @@ export default function ChatbotPage() {
             </Typography>
 
             {questionsData?.error && (
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                Suggested questions API may not be available. This is a demo interface.
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Suggested questions feature has not been migrated to Supabase yet. This is a demo interface.
               </Alert>
             )}
 

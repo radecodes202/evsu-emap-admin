@@ -13,7 +13,6 @@ import {
   Switch,
   FormControlLabel,
 } from '@mui/material';
-import { API_BASE_URL } from '../config/api';
 
 export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
@@ -25,10 +24,7 @@ export default function SettingsPage() {
     handleSubmit,
     formState: { errors },
   } = useForm({
-    defaultValues: {
-      apiUrl: API_BASE_URL,
-      apiTimeout: 5000,
-    },
+    defaultValues: {},
   });
 
   const onSubmit = async (data) => {
@@ -66,29 +62,19 @@ export default function SettingsPage() {
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                API Configuration
+                Supabase Configuration
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                This application uses Supabase for data storage. No local API server is required.
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="API Base URL"
-                    {...register('apiUrl', { required: 'API URL is required' })}
-                    error={!!errors.apiUrl}
-                    helperText={errors.apiUrl?.message}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="API Timeout (ms)"
-                    type="number"
-                    {...register('apiTimeout', {
-                      required: 'Timeout is required',
-                      min: { value: 1000, message: 'Minimum timeout is 1000ms' },
-                    })}
-                    error={!!errors.apiTimeout}
-                    helperText={errors.apiTimeout?.message}
+                    label="Supabase URL"
+                    value={import.meta.env.VITE_SUPABASE_URL || 'Not configured'}
+                    disabled
+                    helperText="Configure in .env file"
                   />
                 </Grid>
                 <Grid item xs={12}>

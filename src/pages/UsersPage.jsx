@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Button,
@@ -29,40 +28,27 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { usersAPI } from '../utils/api';
+import { useUsers, useCreateUser, useDeleteUser } from '../hooks/useUsers';
 
 export default function UsersPage() {
-  const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'user' });
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => usersAPI.getAll(),
-    retry: false,
-  });
+  const { data: users = [], isLoading, error } = useUsers();
+  const createMutation = useCreateUser();
+  const deleteMutation = useDeleteUser();
 
-  const createMutation = useMutation({
-    mutationFn: (data) => usersAPI.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
-      setCreateDialogOpen(false);
-      setNewUser({ email: '', password: '', name: '', role: 'user' });
-    },
-  });
+  const handleCreateSuccess = () => {
+    setCreateDialogOpen(false);
+    setNewUser({ email: '', password: '', name: '', role: 'user' });
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => usersAPI.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
-      setDeleteDialogOpen(false);
-      setUserToDelete(null);
-    },
-  });
-
-  const users = data?.data?.data || [];
+  const handleDeleteSuccess = () => {
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
+  };
 
   const handleDeleteClick = (user) => {
     setUserToDelete(user);
@@ -71,12 +57,16 @@ export default function UsersPage() {
 
   const handleDeleteConfirm = () => {
     if (userToDelete) {
-      deleteMutation.mutate(userToDelete.id);
+      deleteMutation.mutate(userToDelete.id, {
+        onSuccess: handleDeleteSuccess,
+      });
     }
   };
 
   const handleCreateSubmit = () => {
-    createMutation.mutate(newUser);
+    createMutation.mutate(newUser, {
+      onSuccess: handleCreateSuccess,
+    });
   };
 
   if (isLoading) {
@@ -90,18 +80,19 @@ export default function UsersPage() {
   if (error) {
     return (
       <Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4">Users</Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            Add User
-          </Button>
-        </Box>
-        <Alert severity="warning">
-          User management API endpoint may not be available. Error: {error.message}
+        <Typography variant="h4" gutterBottom>
+          Users
+        </Typography>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Error Loading Users
+          </Typography>
+          <Typography variant="body2">
+            {error.message}
+            <br />
+            <br />
+            Make sure you've run the <code>database-migration-users-paths.sql</code> script in Supabase.
+          </Typography>
         </Alert>
       </Box>
     );

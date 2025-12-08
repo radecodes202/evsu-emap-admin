@@ -13,7 +13,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { MapContainer, TileLayer, Rectangle, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useBuilding, useCreateBuilding, useUpdateBuilding } from '../hooks/useBuildings';
@@ -36,32 +36,46 @@ const schema = yup.object({
     .matches(/^[A-Z0-9]+$/, 'Code must be uppercase letters and numbers only'),
   latitude: yup
     .number()
-    .required('Latitude is required')
-    .typeError('Latitude must be a valid number')
+    .nullable()
+    .notRequired()
     .transform((value, originalValue) => {
       // Handle string to number conversion for high precision
       if (typeof originalValue === 'string') {
         const parsed = parseFloat(originalValue);
-        return isNaN(parsed) ? originalValue : parsed;
+        return isNaN(parsed) ? null : parsed;
       }
-      return value;
+      return Number.isFinite(value) ? value : null;
     })
-    .min(CAMPUS_BOUNDARIES.southWest.latitude, `Latitude must be at least ${CAMPUS_BOUNDARIES.southWest.latitude}`)
-    .max(CAMPUS_BOUNDARIES.northEast.latitude, `Latitude must be at most ${CAMPUS_BOUNDARIES.northEast.latitude}`),
+    .typeError('Latitude must be a valid number')
+    .test(
+      'within-bounds',
+      `Latitude must be between ${CAMPUS_BOUNDARIES.southWest.latitude} and ${CAMPUS_BOUNDARIES.northEast.latitude}`,
+      (value) =>
+        value === null ||
+        (value >= CAMPUS_BOUNDARIES.southWest.latitude &&
+          value <= CAMPUS_BOUNDARIES.northEast.latitude)
+    ),
   longitude: yup
     .number()
-    .required('Longitude is required')
-    .typeError('Longitude must be a valid number')
+    .nullable()
+    .notRequired()
     .transform((value, originalValue) => {
       // Handle string to number conversion for high precision
       if (typeof originalValue === 'string') {
         const parsed = parseFloat(originalValue);
-        return isNaN(parsed) ? originalValue : parsed;
+        return isNaN(parsed) ? null : parsed;
       }
-      return value;
+      return Number.isFinite(value) ? value : null;
     })
-    .min(CAMPUS_BOUNDARIES.southWest.longitude, `Longitude must be at least ${CAMPUS_BOUNDARIES.southWest.longitude}`)
-    .max(CAMPUS_BOUNDARIES.northEast.longitude, `Longitude must be at most ${CAMPUS_BOUNDARIES.northEast.longitude}`),
+    .typeError('Longitude must be a valid number')
+    .test(
+      'within-bounds',
+      `Longitude must be between ${CAMPUS_BOUNDARIES.southWest.longitude} and ${CAMPUS_BOUNDARIES.northEast.longitude}`,
+      (value) =>
+        value === null ||
+        (value >= CAMPUS_BOUNDARIES.southWest.longitude &&
+          value <= CAMPUS_BOUNDARIES.northEast.longitude)
+    ),
   width_meters: yup
     .number()
     .required('Width is required')
@@ -96,17 +110,29 @@ function metersToDegrees(meters, latitude) {
   return { lat: latDegrees, lng: lngDegrees };
 }
 
-// Helper function to calculate rectangle bounds from center, width, height, and rotation
-function calculateRectangleBounds(centerLat, centerLng, widthMeters, heightMeters, rotationDeg = 0) {
-  const latDeg = metersToDegrees(heightMeters, centerLat).lat / 2;
-  const lngDeg = metersToDegrees(widthMeters, centerLat).lng / 2;
-  
-  // For simplicity, we'll create an axis-aligned bounding box
-  // More complex rotation can be added later if needed
-  const northEast = [centerLat + latDeg, centerLng + lngDeg];
-  const southWest = [centerLat - latDeg, centerLng - lngDeg];
-  
-  return [southWest, northEast];
+// Helper to generate a rotated rectangle as polygon corners
+function calculateRotatedRectangle(centerLat, centerLng, widthMeters, heightMeters, rotationDeg = 0) {
+  const halfLat = metersToDegrees(heightMeters, centerLat).lat / 2;
+  const halfLng = metersToDegrees(widthMeters, centerLat).lng / 2;
+
+  // Corner offsets before rotation (lng, lat)
+  const corners = [
+    [halfLng, halfLat],
+    [-halfLng, halfLat],
+    [-halfLng, -halfLat],
+    [halfLng, -halfLat],
+  ];
+
+  const rad = (rotationDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+
+  // Rotate and translate to center
+  return corners.map(([dx, dy]) => {
+    const x = dx * cos - dy * sin;
+    const y = dx * sin + dy * cos;
+    return [centerLat + y, centerLng + x];
+  });
 }
 
 function MapClickHandler({ onMapClick }) {
@@ -184,18 +210,21 @@ export default function BuildingFormPage() {
   const updateMutation = useUpdateBuilding();
 
   const onSubmit = (formData) => {
-    // Ensure all required fields are present and validated
-    if (!formData.building_name || !formData.building_code || 
-        formData.latitude === undefined || formData.longitude === undefined) {
+    // Ensure required string fields are present and validated
+    if (!formData.building_name || !formData.building_code) {
       console.error('Missing required fields in form submission:', formData);
       return; // Form validation should prevent this, but fail safely
     }
 
+    // Fallback coordinates to center if left empty
+    const latitude = formData.latitude ?? EVSU_CENTER.latitude;
+    const longitude = formData.longitude ?? EVSU_CENTER.longitude;
+
     const payload = {
       building_name: formData.building_name.trim(), // Ensure non-empty after trim
       building_code: formData.building_code.trim(),
-      latitude: formData.latitude.toString(),
-      longitude: formData.longitude.toString(),
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
       width_meters: formData.width_meters?.toString() || '20',
       height_meters: formData.height_meters?.toString() || '20',
       rotation_degrees: formData.rotation_degrees?.toString() || '0',
@@ -332,12 +361,7 @@ export default function BuildingFormPage() {
                     fullWidth
                     label="Latitude"
                     type="number"
-                    step="0.0000000001"
-                    inputProps={{ 
-                      step: 'any',
-                      min: CAMPUS_BOUNDARIES.southWest.latitude,
-                      max: CAMPUS_BOUNDARIES.northEast.latitude
-                    }}
+                    inputProps={{ step: 'any', inputMode: 'decimal' }}
                     {...register('latitude', {
                       valueAsNumber: true
                     })}
@@ -350,12 +374,7 @@ export default function BuildingFormPage() {
                     fullWidth
                     label="Longitude"
                     type="number"
-                    step="0.0000000001"
-                    inputProps={{ 
-                      step: 'any',
-                      min: CAMPUS_BOUNDARIES.southWest.longitude,
-                      max: CAMPUS_BOUNDARIES.northEast.longitude
-                    }}
+                    inputProps={{ step: 'any', inputMode: 'decimal' }}
                     {...register('longitude', {
                       valueAsNumber: true
                     })}
@@ -430,8 +449,14 @@ export default function BuildingFormPage() {
                   />
                   {markerPosition && (
                     <>
-                      <Rectangle
-                        bounds={calculateRectangleBounds(markerPosition[0], markerPosition[1], widthMeters, heightMeters, rotationDegrees)}
+                      <Polygon
+                        positions={calculateRotatedRectangle(
+                          markerPosition[0],
+                          markerPosition[1],
+                          widthMeters,
+                          heightMeters,
+                          rotationDegrees
+                        )}
                         pathOptions={{
                           color: '#800000',
                           fillColor: '#800000',

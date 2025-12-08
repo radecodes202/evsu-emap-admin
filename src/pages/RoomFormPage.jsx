@@ -166,31 +166,31 @@ export default function RoomFormPage() {
                     fullWidth
                     select
                     label="Building *"
-                    value={field.value ?? ''}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    onBlur={field.onBlur}
-                    name={field.name}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      onBlur={field.onBlur}
+                      name={field.name}
                     error={!!errors.building_id}
                     helperText={errors.building_id?.message || (buildingsLoading ? 'Loading buildings...' : buildings.length === 0 ? 'No buildings available. Create a building first.' : '')}
                     disabled={buildingsLoading || buildings.length === 0}
                     SelectProps={{
                       native: true,
                     }}
-                  >
-                    {buildingsLoading ? (
+                    >
+                      {buildingsLoading ? (
                       <option value="" disabled>Loading buildings...</option>
-                    ) : buildings.length === 0 ? (
+                      ) : buildings.length === 0 ? (
                       <option value="" disabled>No buildings available - Create a building first</option>
-                    ) : (
-                      <>
+                      ) : (
+                        <>
                         <option value="" disabled hidden></option>
-                        {buildings.map((building) => (
+                          {buildings.map((building) => (
                           <option key={building.id} value={building.id}>
-                            {building.name} ({building.code})
+                              {building.name} ({building.code})
                           </option>
-                        ))}
-                      </>
-                    )}
+                          ))}
+                        </>
+                      )}
                   </TextField>
                 )}
               />
@@ -239,16 +239,16 @@ export default function RoomFormPage() {
                     fullWidth
                     select
                     label="Room Type"
-                    value={field.value ?? ''}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    onBlur={field.onBlur}
-                    name={field.name}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      onBlur={field.onBlur}
+                      name={field.name}
                     error={!!errors.type}
                     helperText={errors.type?.message}
                     SelectProps={{
                       native: true,
                     }}
-                  >
+                    >
                     <option value="" disabled hidden></option>
                     <option value="classroom">Classroom</option>
                     <option value="laboratory">Laboratory</option>

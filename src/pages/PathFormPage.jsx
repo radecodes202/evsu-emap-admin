@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -26,8 +25,8 @@ import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from 'react-l
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { pathsAPI } from '../utils/api';
 import { EVSU_CENTER, CAMPUS_BOUNDARIES } from '../config/api';
+import { usePath, useCreatePath, useUpdatePath } from '../hooks/usePaths';
 
 // Fix for default marker icons in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -57,16 +56,11 @@ function MapClickHandler({ onMapClick, disabled }) {
 export default function PathFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const isEdit = Boolean(id);
   const [waypoints, setWaypoints] = useState([]);
   const [mapClickEnabled, setMapClickEnabled] = useState(true);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['path', id],
-    queryFn: () => pathsAPI.getById(id),
-    enabled: isEdit,
-  });
+  const { data: path, isLoading } = usePath(id);
 
   const {
     register,
@@ -85,60 +79,54 @@ export default function PathFormPage() {
   });
 
   useEffect(() => {
-    if (isEdit && data?.data?.data) {
-      const path = data.data.data;
+    if (isEdit && path) {
       setValue('path_name', path.path_name);
       setValue('path_type', path.path_type || '');
       setValue('is_active', path.is_active !== false);
       if (path.waypoints && path.waypoints.length > 0) {
-        const sortedWaypoints = [...path.waypoints].sort((a, b) => a.sequence - b.sequence);
+        const sortedWaypoints = [...path.waypoints].sort(
+          (a, b) => (a.sequence_order || 0) - (b.sequence_order || 0)
+        );
         setWaypoints(
           sortedWaypoints.map((wp) => ({
             latitude: parseFloat(wp.latitude),
             longitude: parseFloat(wp.longitude),
-            sequence: wp.sequence,
+            sequence: wp.sequence_order ?? 0,
             is_accessible: wp.is_accessible !== false,
-            notes: wp.notes || '',
-            waypoint_id: wp.waypoint_id,
+            notes: wp.notes || wp.description || '',
+            waypoint_id: wp.id,
           }))
         );
       }
     }
-  }, [data, isEdit, setValue]);
+  }, [path, isEdit, setValue]);
 
-  const createMutation = useMutation({
-    mutationFn: (data) => pathsAPI.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['paths']);
-      navigate('/paths');
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => pathsAPI.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['paths']);
-      queryClient.invalidateQueries(['path', id]);
-      navigate('/paths');
-    },
-  });
+  const createMutation = useCreatePath();
+  const updateMutation = useUpdatePath();
 
   const onSubmit = (formData) => {
     const payload = {
       ...formData,
       waypoints: waypoints.map((wp, index) => ({
-        sequence: index,
-        latitude: wp.latitude.toString(),
-        longitude: wp.longitude.toString(),
-        is_accessible: wp.is_accessible,
-        notes: wp.notes || null,
+        sequence_order: index + 1,
+        latitude: wp.latitude,
+        longitude: wp.longitude,
+        name: wp.name || null,
+        description: wp.notes || null,
       })),
     };
 
     if (isEdit) {
-      updateMutation.mutate({ id, data: payload });
+      updateMutation.mutate(
+        { id, updates: payload },
+        {
+          onSuccess: () => navigate('/paths'),
+        }
+      );
     } else {
-      createMutation.mutate(payload);
+      createMutation.mutate(payload, {
+        onSuccess: () => navigate('/paths'),
+      });
     }
   };
 

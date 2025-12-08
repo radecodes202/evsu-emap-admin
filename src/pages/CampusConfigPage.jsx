@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -46,6 +46,7 @@ export default function CampusConfigPage() {
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -60,6 +61,26 @@ export default function CampusConfigPage() {
     },
   });
 
+  // Load saved configuration from localStorage if available
+  useEffect(() => {
+    const saved = localStorage.getItem('campusConfig');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setValue('centerLatitude', parsed.centerLatitude ?? EVSU_CENTER.latitude);
+        setValue('centerLongitude', parsed.centerLongitude ?? EVSU_CENTER.longitude);
+        setValue('latitudeDelta', parsed.latitudeDelta ?? EVSU_CENTER.latitudeDelta);
+        setValue('longitudeDelta', parsed.longitudeDelta ?? EVSU_CENTER.longitudeDelta);
+        setValue('northEastLat', parsed.northEastLat ?? CAMPUS_BOUNDARIES.northEast.latitude);
+        setValue('northEastLng', parsed.northEastLng ?? CAMPUS_BOUNDARIES.northEast.longitude);
+        setValue('southWestLat', parsed.southWestLat ?? CAMPUS_BOUNDARIES.southWest.latitude);
+        setValue('southWestLng', parsed.southWestLng ?? CAMPUS_BOUNDARIES.southWest.longitude);
+      } catch (e) {
+        console.warn('Failed to parse saved campus config', e);
+      }
+    }
+  }, [setValue]);
+
   const centerLat = watch('centerLatitude');
   const centerLng = watch('centerLongitude');
   const neLat = watch('northEastLat');
@@ -71,15 +92,16 @@ export default function CampusConfigPage() {
     setSaving(true);
     setSaveSuccess(false);
     
-    // In a real app, this would call the settings API
-    // await settingsAPI.update({ campus: data });
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Persist locally so the configuration sticks between sessions
+      localStorage.setItem('campusConfig', JSON.stringify(data));
       setSaving(false);
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    }, 1000);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (e) {
+      console.error('Failed to save campus configuration', e);
+      setSaving(false);
+    }
   };
 
   // Calculate center for map display
@@ -115,8 +137,8 @@ export default function CampusConfigPage() {
                   <TextField
                     fullWidth
                     label="Latitude"
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     {...register('centerLatitude')}
                     error={!!errors.centerLatitude}
                     helperText={errors.centerLatitude?.message}
@@ -126,8 +148,8 @@ export default function CampusConfigPage() {
                   <TextField
                     fullWidth
                     label="Longitude"
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     {...register('centerLongitude')}
                     error={!!errors.centerLongitude}
                     helperText={errors.centerLongitude?.message}
@@ -137,8 +159,8 @@ export default function CampusConfigPage() {
                   <TextField
                     fullWidth
                     label="Latitude Delta"
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     {...register('latitudeDelta')}
                     error={!!errors.latitudeDelta}
                     helperText={errors.latitudeDelta?.message}
@@ -148,8 +170,8 @@ export default function CampusConfigPage() {
                   <TextField
                     fullWidth
                     label="Longitude Delta"
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     {...register('longitudeDelta')}
                     error={!!errors.longitudeDelta}
                     helperText={errors.longitudeDelta?.message}
@@ -177,8 +199,8 @@ export default function CampusConfigPage() {
                   <TextField
                     fullWidth
                     label="Latitude"
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     {...register('northEastLat')}
                     error={!!errors.northEastLat}
                     helperText={errors.northEastLat?.message}
@@ -188,8 +210,8 @@ export default function CampusConfigPage() {
                   <TextField
                     fullWidth
                     label="Longitude"
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     {...register('northEastLng')}
                     error={!!errors.northEastLng}
                     helperText={errors.northEastLng?.message}
@@ -204,8 +226,8 @@ export default function CampusConfigPage() {
                   <TextField
                     fullWidth
                     label="Latitude"
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     {...register('southWestLat')}
                     error={!!errors.southWestLat}
                     helperText={errors.southWestLat?.message}
@@ -215,8 +237,8 @@ export default function CampusConfigPage() {
                   <TextField
                     fullWidth
                     label="Longitude"
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     {...register('southWestLng')}
                     error={!!errors.southWestLng}
                     helperText={errors.southWestLng?.message}

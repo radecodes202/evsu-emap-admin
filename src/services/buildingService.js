@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { auditService } from './auditService'
 
 export const buildingService = {
   async getAll() {
@@ -44,6 +45,18 @@ export const buildingService = {
       .single()
     
     if (error) throw error
+    // Audit log (best-effort)
+    try {
+      await auditService.logEvent({
+        action_type: 'CREATE',
+        entity_type: 'building',
+        entity_id: data.id,
+        new_values: buildingData,
+        description: `Created building ${buildingData.code || buildingData.name || data.id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (create building):', e)
+    }
     return data
   },
 
@@ -104,6 +117,17 @@ export const buildingService = {
       .single()
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'UPDATE',
+        entity_type: 'building',
+        entity_id: id,
+        new_values: buildingData,
+        description: `Updated building ${buildingData.code || buildingData.name || id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (update building):', e)
+    }
     return data
   },
 
@@ -114,6 +138,16 @@ export const buildingService = {
       .eq('id', id)
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'DELETE',
+        entity_type: 'building',
+        entity_id: id,
+        description: `Deleted building ${id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (delete building):', e)
+    }
   },
 
   async uploadImage(file, buildingId) {

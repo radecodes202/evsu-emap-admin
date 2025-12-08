@@ -26,6 +26,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import MapIcon from '@mui/icons-material/Map';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import { useBuildings, useDeleteBuilding } from '../hooks/useBuildings';
@@ -217,8 +218,19 @@ export default function BuildingsPage() {
                   <TableCell align="right">
                     <IconButton
                       size="small"
+                      onClick={() => navigate(`/buildings/view/${building.id}`)}
+                      color="secondary"
+                      sx={{ mr: 0.5 }}
+                      title="Preview on map"
+                    >
+                      <MapIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
                       onClick={() => navigate(`/buildings/edit/${building.id}`)}
                       color="primary"
+                      sx={{ mr: 0.5 }}
+                      title="Edit"
                     >
                       <EditIcon />
                     </IconButton>
@@ -226,6 +238,7 @@ export default function BuildingsPage() {
                       size="small"
                       onClick={() => handleDeleteClick(building)}
                       color="error"
+                      title="Delete"
                     >
                       <DeleteIcon />
                     </IconButton>

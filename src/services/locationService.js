@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { auditService } from './auditService'
 
 export const locationService = {
   async getAll() {
@@ -49,6 +50,17 @@ export const locationService = {
       .single()
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'CREATE',
+        entity_type: 'location',
+        entity_id: data.id,
+        new_values: location,
+        description: `Created location ${location.name || location.room_number || data.id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (create location):', e)
+    }
     return data
   },
 
@@ -61,6 +73,17 @@ export const locationService = {
       .single()
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'UPDATE',
+        entity_type: 'location',
+        entity_id: id,
+        new_values: updates,
+        description: `Updated location ${updates.name || updates.room_number || id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (update location):', e)
+    }
     return data
   },
 
@@ -71,5 +94,15 @@ export const locationService = {
       .eq('id', id)
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'DELETE',
+        entity_type: 'location',
+        entity_id: id,
+        description: `Deleted location ${id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (delete location):', e)
+    }
   }
 }

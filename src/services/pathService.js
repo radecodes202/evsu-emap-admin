@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { auditService } from './auditService'
 
 export const pathService = {
   async getAll() {
@@ -80,6 +81,17 @@ export const pathService = {
       if (waypointsError) throw waypointsError
     }
 
+    try {
+      await auditService.logEvent({
+        action_type: 'CREATE',
+        entity_type: 'route',
+        entity_id: data.id,
+        new_values: pathData,
+        description: `Created route ${pathData.path_name || data.id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (create route):', e)
+    }
     return data
   },
 
@@ -109,6 +121,17 @@ export const pathService = {
       .single()
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'UPDATE',
+        entity_type: 'route',
+        entity_id: id,
+        new_values: updateData,
+        description: `Updated route ${updateData.path_name || id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (update route):', e)
+    }
     return data
   },
 
@@ -120,6 +143,16 @@ export const pathService = {
       .eq('id', id)
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'DELETE',
+        entity_type: 'route',
+        entity_id: id,
+        description: `Deleted route ${id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (delete route):', e)
+    }
   },
 
   async addWaypoint(routeId, waypoint) {

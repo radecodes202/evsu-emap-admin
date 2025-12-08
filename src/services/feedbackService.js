@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { auditService } from './auditService'
 
 export const feedbackService = {
   async getAll(filters = {}) {
@@ -53,6 +54,17 @@ export const feedbackService = {
       .single()
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'CREATE',
+        entity_type: 'feedback',
+        entity_id: data.id,
+        new_values: feedback,
+        description: `Created feedback ${data.id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (create feedback):', e)
+    }
     return data
   },
 
@@ -69,6 +81,17 @@ export const feedbackService = {
       .single()
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'UPDATE',
+        entity_type: 'feedback',
+        entity_id: id,
+        new_values: updates,
+        description: `Updated feedback ${id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (update feedback):', e)
+    }
     return data
   },
 
@@ -79,5 +102,15 @@ export const feedbackService = {
       .eq('id', id)
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'DELETE',
+        entity_type: 'feedback',
+        entity_id: id,
+        description: `Deleted feedback ${id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (delete feedback):', e)
+    }
   }
 }

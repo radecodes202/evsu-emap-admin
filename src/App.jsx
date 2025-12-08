@@ -14,6 +14,7 @@ import PathsPage from './pages/PathsPage';
 import PathFormPage from './pages/PathFormPage';
 import RoomsPage from './pages/RoomsPage';
 import RoomFormPage from './pages/RoomFormPage';
+import BuildingPreviewPage from './pages/BuildingPreviewPage';
 import AboutPage from './pages/AboutPage';
 import HelpPage from './pages/HelpPage';
 import AuditTrailPage from './pages/AuditTrailPage';
@@ -47,6 +48,7 @@ function App() {
           <Route path="buildings" element={<BuildingsPage />} />
           <Route path="buildings/new" element={<BuildingFormPage />} />
           <Route path="buildings/edit/:id" element={<BuildingFormPage />} />
+          <Route path="buildings/view/:id" element={<BuildingPreviewPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="campus-config" element={<CampusConfigPage />} />
           <Route path="paths" element={<PathsPage />} />

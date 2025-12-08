@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { auditService } from './auditService'
 
 export const userService = {
   async getAll() {
@@ -37,6 +38,17 @@ export const userService = {
       .single()
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'CREATE',
+        entity_type: 'admin_user',
+        entity_id: data.id,
+        new_values: userData,
+        description: `Created admin user ${userData.email}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (create admin user):', e)
+    }
     return data
   },
 
@@ -61,6 +73,17 @@ export const userService = {
       .single()
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'UPDATE',
+        entity_type: 'admin_user',
+        entity_id: id,
+        new_values: updateData,
+        description: `Updated admin user ${updateData.email || id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (update admin user):', e)
+    }
     return data
   },
 
@@ -71,5 +94,15 @@ export const userService = {
       .eq('id', id)
     
     if (error) throw error
+    try {
+      await auditService.logEvent({
+        action_type: 'DELETE',
+        entity_type: 'admin_user',
+        entity_id: id,
+        description: `Deleted admin user ${id}`,
+      })
+    } catch (e) {
+      console.warn('Audit log failed (delete admin user):', e)
+    }
   }
 }

@@ -23,10 +23,6 @@ import {
   Switch,
   TextField,
   InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -41,7 +37,7 @@ export default function PathsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pathToDelete, setPathToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('');
 
   const { data: paths = [], isLoading, error } = usePaths();
   const deleteMutation = useDeletePath();
@@ -77,7 +73,7 @@ export default function PathsPage() {
     let filtered = paths;
     
     // Filter by type
-    if (typeFilter !== 'all') {
+    if (typeFilter) {
       filtered = filtered.filter(path => path.path_type === typeFilter);
     }
     
@@ -127,14 +123,14 @@ export default function PathsPage() {
     <Box>
       <Box mb={3}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={2}>
-          <Typography variant="h4">Paths & Walkways</Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/paths/new')}
-          >
-            Add Path
-          </Button>
+        <Typography variant="h4">Paths & Walkways</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/paths/new')}
+        >
+          Add Path
+        </Button>
         </Box>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={6} md={4}>
@@ -154,27 +150,30 @@ export default function PathsPage() {
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Path Type</InputLabel>
-              <Select
-                value={typeFilter}
-                label="Path Type"
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <MenuItem value="all">All Types</MenuItem>
-                <MenuItem value="walkway">Walkway</MenuItem>
-                <MenuItem value="sidewalk">Sidewalk</MenuItem>
-                <MenuItem value="path">Path</MenuItem>
-                <MenuItem value="road">Road</MenuItem>
-                <MenuItem value="indoor">Indoor</MenuItem>
-                <MenuItem value="corridor">Corridor</MenuItem>
-                <MenuItem value="stairs">Stairs</MenuItem>
-                <MenuItem value="elevator">Elevator</MenuItem>
-                <MenuItem value="ramp">Ramp</MenuItem>
-                <MenuItem value="bridge">Bridge</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Path Type"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="" disabled hidden></option>
+              <option value="walkway">Walkway</option>
+              <option value="sidewalk">Sidewalk</option>
+              <option value="path">Path</option>
+              <option value="road">Road</option>
+              <option value="indoor">Indoor</option>
+              <option value="corridor">Corridor</option>
+              <option value="stairs">Stairs</option>
+              <option value="elevator">Elevator</option>
+              <option value="ramp">Ramp</option>
+              <option value="bridge">Bridge</option>
+              <option value="other">Other</option>
+            </TextField>
           </Grid>
         </Grid>
       </Box>

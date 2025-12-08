@@ -12,11 +12,6 @@ import {
   Grid,
   Alert,
   CircularProgress,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  FormHelperText,
 } from '@mui/material';
 import { MapContainer, TileLayer, Rectangle, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -149,7 +144,7 @@ export default function BuildingFormPage() {
       width_meters: 20,
       height_meters: 20,
       rotation_degrees: 0,
-      category: 'academic',
+      category: '',
       description: '',
     },
     mode: 'onChange', // Validate on change for better UX
@@ -170,7 +165,7 @@ export default function BuildingFormPage() {
       setValue('width_meters', parseFloat(building.width_meters) || 20);
       setValue('height_meters', parseFloat(building.height_meters) || 20);
       setValue('rotation_degrees', parseFloat(building.rotation_degrees) || 0);
-      setValue('category', building.category || 'academic');
+      setValue('category', building.category || '');
       setValue('description', building.description || '');
       setMarkerPosition([parseFloat(building.latitude), parseFloat(building.longitude)]);
     } else {
@@ -204,7 +199,7 @@ export default function BuildingFormPage() {
       width_meters: formData.width_meters?.toString() || '20',
       height_meters: formData.height_meters?.toString() || '20',
       rotation_degrees: formData.rotation_degrees?.toString() || '0',
-      category: formData.category || 'academic', // Category is required, but fallback to academic
+      category: formData.category, // Category is required
       description: formData.description || '',
       image_url: formData.image_url || null,
     };
@@ -284,28 +279,30 @@ export default function BuildingFormPage() {
                   <Controller
                     name="category"
                     control={control}
-                    defaultValue="academic"
+                    defaultValue=""
                     render={({ field }) => (
-                      <FormControl fullWidth error={!!errors.category}>
-                        <InputLabel>Category *</InputLabel>
-                        <Select
-                          value={field.value ?? 'academic'}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          label="Category *"
-                        >
-                          <MenuItem value="academic">Academic</MenuItem>
-                          <MenuItem value="administrative">Administrative</MenuItem>
-                          <MenuItem value="facility">Facility</MenuItem>
-                          <MenuItem value="sports">Sports</MenuItem>
-                          <MenuItem value="residential">Residential</MenuItem>
-                          <MenuItem value="other">Other</MenuItem>
-                        </Select>
-                        {errors.category && (
-                          <FormHelperText>{errors.category.message}</FormHelperText>
-                        )}
-                      </FormControl>
+                      <TextField
+                        fullWidth
+                        select
+                        label="Category *"
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        error={!!errors.category}
+                        helperText={errors.category?.message}
+                        SelectProps={{
+                          native: true,
+                        }}
+                      >
+                        <option value="" disabled hidden></option>
+                        <option value="academic">Academic</option>
+                        <option value="administrative">Administrative</option>
+                        <option value="facility">Facility</option>
+                        <option value="sports">Sports</option>
+                        <option value="residential">Residential</option>
+                        <option value="other">Other</option>
+                      </TextField>
                     )}
                   />
                 </Grid>

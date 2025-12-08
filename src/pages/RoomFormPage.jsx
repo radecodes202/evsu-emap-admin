@@ -11,12 +11,7 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  MenuItem,
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  FormHelperText,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
@@ -167,47 +162,36 @@ export default function RoomFormPage() {
                 defaultValue=""
                 rules={{ required: 'Building is required' }}
                 render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.building_id} disabled={buildingsLoading || buildings.length === 0}>
-                    <InputLabel>Building *</InputLabel>
-                    <Select
-                      value={field.value ?? ''}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      label="Building *"
-                      disabled={buildingsLoading}
-                      displayEmpty
-                    >
-                      {buildingsLoading ? (
-                        <MenuItem value="" disabled>
-                          <em>Loading buildings...</em>
-                        </MenuItem>
-                      ) : buildings.length === 0 ? (
-                        <MenuItem value="" disabled>
-                          <em>No buildings available - Create a building first</em>
-                        </MenuItem>
-                      ) : (
-                        <>
-                          <MenuItem value="">
-                            <em>Select a building</em>
-                          </MenuItem>
-                          {buildings.map((building) => (
-                            <MenuItem key={building.id} value={building.id}>
-                              {building.name} ({building.code})
-                            </MenuItem>
-                          ))}
-                        </>
-                      )}
-                    </Select>
-                    {errors.building_id && (
-                      <FormHelperText>{errors.building_id.message}</FormHelperText>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Building *"
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    error={!!errors.building_id}
+                    helperText={errors.building_id?.message || (buildingsLoading ? 'Loading buildings...' : buildings.length === 0 ? 'No buildings available. Create a building first.' : '')}
+                    disabled={buildingsLoading || buildings.length === 0}
+                    SelectProps={{
+                      native: true,
+                    }}
+                  >
+                    {buildingsLoading ? (
+                      <option value="" disabled>Loading buildings...</option>
+                    ) : buildings.length === 0 ? (
+                      <option value="" disabled>No buildings available - Create a building first</option>
+                    ) : (
+                      <>
+                        <option value="" disabled hidden></option>
+                        {buildings.map((building) => (
+                          <option key={building.id} value={building.id}>
+                            {building.name} ({building.code})
+                          </option>
+                        ))}
+                      </>
                     )}
-                    {!errors.building_id && (buildingsLoading || buildings.length === 0) && (
-                      <FormHelperText>
-                        {buildingsLoading ? 'Loading buildings...' : 'No buildings available. Create a building first.'}
-                      </FormHelperText>
-                    )}
-                  </FormControl>
+                  </TextField>
                 )}
               />
             </Grid>
@@ -251,36 +235,31 @@ export default function RoomFormPage() {
                 control={control}
                 defaultValue=""
                 render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.type}>
-                    <InputLabel>Room Type</InputLabel>
-                    <Select
-                      value={field.value ?? ''}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      label="Room Type"
-                      displayEmpty
-                    >
-                      <MenuItem value="">
-                        <em>Select Type</em>
-                      </MenuItem>
-                      <MenuItem value="classroom">Classroom</MenuItem>
-                      <MenuItem value="laboratory">Laboratory</MenuItem>
-                      <MenuItem value="office">Office</MenuItem>
-                      <MenuItem value="library">Library</MenuItem>
-                      <MenuItem value="lecture-hall">Lecture Hall</MenuItem>
-                      <MenuItem value="conference-room">Conference Room</MenuItem>
-                      <MenuItem value="restroom">Restroom</MenuItem>
-                      <MenuItem value="storage">Storage</MenuItem>
-                      <MenuItem value="other">Other</MenuItem>
-                    </Select>
-                    {errors.type && (
-                      <FormHelperText>{errors.type.message}</FormHelperText>
-                    )}
-                    {!errors.type && (
-                      <FormHelperText>Select the room type</FormHelperText>
-                    )}
-                  </FormControl>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Room Type"
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    error={!!errors.type}
+                    helperText={errors.type?.message}
+                    SelectProps={{
+                      native: true,
+                    }}
+                  >
+                    <option value="" disabled hidden></option>
+                    <option value="classroom">Classroom</option>
+                    <option value="laboratory">Laboratory</option>
+                    <option value="office">Office</option>
+                    <option value="library">Library</option>
+                    <option value="lecture-hall">Lecture Hall</option>
+                    <option value="conference-room">Conference Room</option>
+                    <option value="restroom">Restroom</option>
+                    <option value="storage">Storage</option>
+                    <option value="other">Other</option>
+                  </TextField>
                 )}
               />
             </Grid>

@@ -20,10 +20,6 @@ import {
   DialogActions,
   Chip,
   TextField,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
   InputAdornment,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -44,13 +40,13 @@ export default function UsersPage() {
   const deleteMutation = useDeleteUser();
 
   const handleCreateSuccess = () => {
-    setCreateDialogOpen(false);
-    setNewUser({ email: '', password: '', name: '', role: 'user' });
+      setCreateDialogOpen(false);
+      setNewUser({ email: '', password: '', name: '', role: 'user' });
   };
 
   const handleDeleteSuccess = () => {
-    setDeleteDialogOpen(false);
-    setUserToDelete(null);
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
   };
 
   const handleDeleteClick = (user) => {
@@ -132,13 +128,13 @@ export default function UsersPage() {
             }}
             sx={{ minWidth: 250 }}
           />
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            Add User
-          </Button>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setCreateDialogOpen(true)}
+        >
+          Add User
+        </Button>
         </Box>
       </Box>
 
@@ -224,17 +220,20 @@ export default function UsersPage() {
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               margin="normal"
             />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Role</InputLabel>
-              <Select
-                value={newUser.role}
-                label="Role"
-                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-              >
-                <MenuItem value="user">User</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              select
+              label="Role"
+              value={newUser.role}
+              onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+              margin="normal"
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </TextField>
           </Box>
         </DialogContent>
         <DialogActions>

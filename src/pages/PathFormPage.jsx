@@ -13,11 +13,6 @@ import {
   Grid,
   Alert,
   CircularProgress,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  FormHelperText,
   Switch,
   FormControlLabel,
   List,
@@ -84,7 +79,7 @@ export default function PathFormPage() {
     resolver: yupResolver(schema),
     defaultValues: {
       path_name: '',
-      path_type: 'walkway',
+      path_type: '',
       is_active: true,
     },
   });
@@ -93,7 +88,7 @@ export default function PathFormPage() {
     if (isEdit && data?.data?.data) {
       const path = data.data.data;
       setValue('path_name', path.path_name);
-      setValue('path_type', path.path_type || 'walkway');
+      setValue('path_type', path.path_type || '');
       setValue('is_active', path.is_active !== false);
       if (path.waypoints && path.waypoints.length > 0) {
         const sortedWaypoints = [...path.waypoints].sort((a, b) => a.sequence - b.sequence);
@@ -218,34 +213,35 @@ export default function PathFormPage() {
                   <Controller
                     name="path_type"
                     control={control}
-                    defaultValue="walkway"
+                    defaultValue=""
                     render={({ field }) => (
-                      <FormControl fullWidth error={!!errors.path_type}>
-                        <InputLabel>Path Type</InputLabel>
-                        <Select
-                          value={field.value ?? 'walkway'}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          label="Path Type"
-                          displayEmpty
-                        >
-                          <MenuItem value="walkway">Walkway</MenuItem>
-                          <MenuItem value="sidewalk">Sidewalk</MenuItem>
-                          <MenuItem value="path">Path</MenuItem>
-                          <MenuItem value="road">Road</MenuItem>
-                          <MenuItem value="indoor">Indoor</MenuItem>
-                          <MenuItem value="corridor">Corridor</MenuItem>
-                          <MenuItem value="stairs">Stairs</MenuItem>
-                          <MenuItem value="elevator">Elevator</MenuItem>
-                          <MenuItem value="ramp">Ramp</MenuItem>
-                          <MenuItem value="bridge">Bridge</MenuItem>
-                          <MenuItem value="other">Other</MenuItem>
-                        </Select>
-                        {errors.path_type && (
-                          <FormHelperText error>{errors.path_type.message}</FormHelperText>
-                        )}
-                      </FormControl>
+                      <TextField
+                        fullWidth
+                        select
+                        label="Path Type *"
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        error={!!errors.path_type}
+                        helperText={errors.path_type?.message}
+                        SelectProps={{
+                          native: true,
+                        }}
+                      >
+                        <option value="" disabled hidden></option>
+                        <option value="walkway">Walkway</option>
+                        <option value="sidewalk">Sidewalk</option>
+                        <option value="path">Path</option>
+                        <option value="road">Road</option>
+                        <option value="indoor">Indoor</option>
+                        <option value="corridor">Corridor</option>
+                        <option value="stairs">Stairs</option>
+                        <option value="elevator">Elevator</option>
+                        <option value="ramp">Ramp</option>
+                        <option value="bridge">Bridge</option>
+                        <option value="other">Other</option>
+                      </TextField>
                     )}
                   />
                 </Grid>

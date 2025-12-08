@@ -13,10 +13,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -132,37 +128,43 @@ export default function FeedbackPage() {
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={filters.status}
-                label="Status"
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              >
-                <MenuItem value="">All Statuses</MenuItem>
-                <MenuItem value="new">New</MenuItem>
-                <MenuItem value="in_progress">In Progress</MenuItem>
-                <MenuItem value="resolved">Resolved</MenuItem>
-                <MenuItem value="closed">Closed</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Status"
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="" disabled hidden></option>
+              <option value="new">New</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </TextField>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Category</InputLabel>
-              <Select
-                value={filters.category}
-                label="Category"
-                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-              >
-                <MenuItem value="">All Categories</MenuItem>
-                <MenuItem value="bug">Bug Report</MenuItem>
-                <MenuItem value="feature">Feature Request</MenuItem>
-                <MenuItem value="suggestion">Suggestion</MenuItem>
-                <MenuItem value="complaint">Complaint</MenuItem>
-                <MenuItem value="compliment">Compliment</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Category"
+              value={filters.category}
+              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="" disabled hidden></option>
+              <option value="bug">Bug Report</option>
+              <option value="feature">Feature Request</option>
+              <option value="suggestion">Suggestion</option>
+              <option value="complaint">Complaint</option>
+              <option value="compliment">Compliment</option>
+            </TextField>
           </Grid>
         </Grid>
       </Paper>
@@ -294,38 +296,44 @@ export default function FeedbackPage() {
               </Grid>
             )}
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={selectedFeedback?.status || 'new'}
-                  label="Status"
-                  onChange={(e) =>
-                    setSelectedFeedback({ ...selectedFeedback, status: e.target.value })
-                  }
-                >
-                  <MenuItem value="new">New</MenuItem>
-                  <MenuItem value="in_progress">In Progress</MenuItem>
-                  <MenuItem value="resolved">Resolved</MenuItem>
-                  <MenuItem value="closed">Closed</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                size="small"
+                select
+                label="Status"
+                value={selectedFeedback?.status || 'new'}
+                onChange={(e) =>
+                  setSelectedFeedback({ ...selectedFeedback, status: e.target.value })
+                }
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                <option value="new">New</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Priority</InputLabel>
-                <Select
-                  value={selectedFeedback?.priority || 'medium'}
-                  label="Priority"
-                  onChange={(e) =>
-                    setSelectedFeedback({ ...selectedFeedback, priority: e.target.value })
-                  }
-                >
-                  <MenuItem value="low">Low</MenuItem>
-                  <MenuItem value="medium">Medium</MenuItem>
-                  <MenuItem value="high">High</MenuItem>
-                  <MenuItem value="urgent">Urgent</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                size="small"
+                select
+                label="Priority"
+                value={selectedFeedback?.priority || 'medium'}
+                onChange={(e) =>
+                  setSelectedFeedback({ ...selectedFeedback, priority: e.target.value })
+                }
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </TextField>
             </Grid>
             <Grid item xs={12}>
               <TextField

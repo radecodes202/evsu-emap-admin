@@ -22,10 +22,6 @@ import {
   Chip,
   TextField,
   InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -39,7 +35,7 @@ export default function BuildingsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [buildingToDelete, setBuildingToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('');
 
   const { data: buildings = [], isLoading, error } = useBuildings();
   const deleteMutation = useDeleteBuilding();
@@ -67,7 +63,7 @@ export default function BuildingsPage() {
     let filtered = buildings;
     
     // Filter by category
-    if (categoryFilter !== 'all') {
+    if (categoryFilter) {
       filtered = filtered.filter(building => building.category === categoryFilter);
     }
     
@@ -105,14 +101,14 @@ export default function BuildingsPage() {
     <Box>
       <Box mb={3}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={2}>
-          <Typography variant="h4">Buildings</Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/buildings/new')}
-          >
-            Add Building
-          </Button>
+        <Typography variant="h4">Buildings</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/buildings/new')}
+        >
+          Add Building
+        </Button>
         </Box>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={6} md={4}>
@@ -132,22 +128,25 @@ export default function BuildingsPage() {
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Category</InputLabel>
-              <Select
-                value={categoryFilter}
-                label="Category"
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <MenuItem value="all">All Categories</MenuItem>
-                <MenuItem value="academic">Academic</MenuItem>
-                <MenuItem value="administrative">Administrative</MenuItem>
-                <MenuItem value="facility">Facility</MenuItem>
-                <MenuItem value="sports">Sports</MenuItem>
-                <MenuItem value="residential">Residential</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Category"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="" disabled hidden></option>
+              <option value="academic">Academic</option>
+              <option value="administrative">Administrative</option>
+              <option value="facility">Facility</option>
+              <option value="sports">Sports</option>
+              <option value="residential">Residential</option>
+              <option value="other">Other</option>
+            </TextField>
           </Grid>
         </Grid>
       </Box>

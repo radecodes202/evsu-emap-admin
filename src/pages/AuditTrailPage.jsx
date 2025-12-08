@@ -13,10 +13,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   TextField,
   Grid,
   Card,
@@ -178,39 +174,45 @@ export default function AuditTrailPage() {
             />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Action Type</InputLabel>
-              <Select
-                value={filters.action_type}
-                label="Action Type"
-                onChange={(e) => setFilters({ ...filters, action_type: e.target.value })}
-              >
-                <MenuItem value="">All Actions</MenuItem>
-                <MenuItem value="CREATE">Create</MenuItem>
-                <MenuItem value="UPDATE">Update</MenuItem>
-                <MenuItem value="DELETE">Delete</MenuItem>
-                <MenuItem value="LOGIN">Login</MenuItem>
-                <MenuItem value="LOGOUT">Logout</MenuItem>
-                <MenuItem value="VIEW">View</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Action Type"
+              value={filters.action_type}
+              onChange={(e) => setFilters({ ...filters, action_type: e.target.value })}
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="" disabled hidden></option>
+              <option value="CREATE">Create</option>
+              <option value="UPDATE">Update</option>
+              <option value="DELETE">Delete</option>
+              <option value="LOGIN">Login</option>
+              <option value="LOGOUT">Logout</option>
+              <option value="VIEW">View</option>
+            </TextField>
           </Grid>
           <Grid item xs={12} sm={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Entity Type</InputLabel>
-              <Select
-                value={filters.entity_type}
-                label="Entity Type"
-                onChange={(e) => setFilters({ ...filters, entity_type: e.target.value })}
-              >
-                <MenuItem value="">All Entities</MenuItem>
-                <MenuItem value="building">Building</MenuItem>
-                <MenuItem value="location">Location/Room</MenuItem>
-                <MenuItem value="route">Route/Path</MenuItem>
-                <MenuItem value="user">User</MenuItem>
-                <MenuItem value="auth">Authentication</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Entity Type"
+              value={filters.entity_type}
+              onChange={(e) => setFilters({ ...filters, entity_type: e.target.value })}
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="" disabled hidden></option>
+              <option value="building">Building</option>
+              <option value="location">Location/Room</option>
+              <option value="route">Route/Path</option>
+              <option value="user">User</option>
+              <option value="auth">Authentication</option>
+            </TextField>
           </Grid>
           <Grid item xs={12} sm={4}>
             <TextField

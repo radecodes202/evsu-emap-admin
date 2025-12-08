@@ -20,10 +20,6 @@ import {
   DialogContentText,
   DialogActions,
   Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   TextField,
   InputAdornment,
   Grid,
@@ -40,9 +36,9 @@ export default function RoomsPage() {
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState(null);
-  const [buildingFilter, setBuildingFilter] = useState('all');
+  const [buildingFilter, setBuildingFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('');
 
   const { data: rooms = [], isLoading, error } = useAllLocations();
   const { data: buildings = [] } = useBuildings();
@@ -79,12 +75,12 @@ export default function RoomsPage() {
     let filtered = rooms;
     
     // Filter by building
-    if (buildingFilter !== 'all') {
+    if (buildingFilter) {
       filtered = filtered.filter(room => room.building_id === buildingFilter);
     }
     
     // Filter by type
-    if (typeFilter !== 'all') {
+    if (typeFilter) {
       filtered = filtered.filter(room => room.type === typeFilter);
     }
 
@@ -160,42 +156,48 @@ export default function RoomsPage() {
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Building</InputLabel>
-              <Select
-                value={buildingFilter}
-                label="Building"
-                onChange={(e) => setBuildingFilter(e.target.value)}
-              >
-                <MenuItem value="all">All Buildings</MenuItem>
-                {buildings.map((building) => (
-                  <MenuItem key={building.id} value={building.id}>
-                    {building.name} ({building.code})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Building"
+              value={buildingFilter}
+              onChange={(e) => setBuildingFilter(e.target.value)}
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="" disabled hidden></option>
+              {buildings.map((building) => (
+                <option key={building.id} value={building.id}>
+                  {building.name} ({building.code})
+                </option>
+              ))}
+            </TextField>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Room Type</InputLabel>
-              <Select
-                value={typeFilter}
-                label="Room Type"
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <MenuItem value="all">All Types</MenuItem>
-                <MenuItem value="classroom">Classroom</MenuItem>
-                <MenuItem value="laboratory">Laboratory</MenuItem>
-                <MenuItem value="office">Office</MenuItem>
-                <MenuItem value="library">Library</MenuItem>
-                <MenuItem value="lecture-hall">Lecture Hall</MenuItem>
-                <MenuItem value="conference-room">Conference Room</MenuItem>
-                <MenuItem value="restroom">Restroom</MenuItem>
-                <MenuItem value="storage">Storage</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Room Type"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="" disabled hidden></option>
+              <option value="classroom">Classroom</option>
+              <option value="laboratory">Laboratory</option>
+              <option value="office">Office</option>
+              <option value="library">Library</option>
+              <option value="lecture-hall">Lecture Hall</option>
+              <option value="conference-room">Conference Room</option>
+              <option value="restroom">Restroom</option>
+              <option value="storage">Storage</option>
+              <option value="other">Other</option>
+            </TextField>
           </Grid>
         </Grid>
       </Box>
@@ -222,7 +224,7 @@ export default function RoomsPage() {
                       ? 'No rooms found. Click "Add Room" to create one.'
                       : buildingFilter !== 'all' && !searchQuery
                         ? 'No rooms found in this building.'
-                        : searchQuery && buildingFilter !== 'all'
+                        : searchQuery && buildingFilter
                           ? `No rooms match "${searchQuery}" in the selected building.`
                           : `No rooms match "${searchQuery}".`}
                   </Typography>

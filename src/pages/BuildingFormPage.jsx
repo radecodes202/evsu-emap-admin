@@ -18,6 +18,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useBuilding, useCreateBuilding, useUpdateBuilding } from '../hooks/useBuildings';
 import { EVSU_CENTER, CAMPUS_BOUNDARIES } from '../config/api';
+import { loadCampusConfig } from '../utils/campusConfig';
 
 // Fix for default marker icons in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -150,6 +151,7 @@ export default function BuildingFormPage() {
   const navigate = useNavigate();
   const isEdit = Boolean(id);
   const [markerPosition, setMarkerPosition] = useState(null);
+  const campus = loadCampusConfig();
 
   const { data: building, isLoading } = useBuilding(id);
 
@@ -165,8 +167,8 @@ export default function BuildingFormPage() {
     defaultValues: {
       building_name: '',
       building_code: '',
-      latitude: EVSU_CENTER.latitude,
-      longitude: EVSU_CENTER.longitude,
+      latitude: campus.center.latitude,
+      longitude: campus.center.longitude,
       width_meters: 20,
       height_meters: 20,
       rotation_degrees: 0,
@@ -195,9 +197,9 @@ export default function BuildingFormPage() {
       setValue('description', building.description || '');
       setMarkerPosition([parseFloat(building.latitude), parseFloat(building.longitude)]);
     } else {
-      setMarkerPosition([EVSU_CENTER.latitude, EVSU_CENTER.longitude]);
+      setMarkerPosition([campus.center.latitude, campus.center.longitude]);
     }
-  }, [building, isEdit, setValue]);
+  }, [building, isEdit, setValue, campus.center.latitude, campus.center.longitude]);
 
   useEffect(() => {
     if (markerPosition) {

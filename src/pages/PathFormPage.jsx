@@ -26,6 +26,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { EVSU_CENTER, CAMPUS_BOUNDARIES } from '../config/api';
+import { loadCampusConfig } from '../utils/campusConfig';
 import { usePath, useCreatePath, useUpdatePath } from '../hooks/usePaths';
 
 // Fix for default marker icons in Leaflet
@@ -59,6 +60,7 @@ export default function PathFormPage() {
   const isEdit = Boolean(id);
   const [waypoints, setWaypoints] = useState([]);
   const [mapClickEnabled, setMapClickEnabled] = useState(true);
+  const campus = loadCampusConfig();
 
   const { data: path, isLoading } = usePath(id);
 
@@ -172,7 +174,7 @@ export default function PathFormPage() {
   const mutation = isEdit ? updateMutation : createMutation;
   const mapCenter = waypoints.length > 0 
     ? [waypoints[0].latitude, waypoints[0].longitude]
-    : [EVSU_CENTER.latitude, EVSU_CENTER.longitude];
+    : [campus.center.latitude, campus.center.longitude];
 
   return (
     <Box>

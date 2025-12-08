@@ -38,6 +38,11 @@ BEGIN
     CREATE POLICY "Public read audit_logs" ON audit_logs FOR SELECT USING (true);
   END IF;
   
+  -- Allow inserts from the app (anon key) for audit logging
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'audit_logs' AND policyname = 'Public insert audit_logs') THEN
+    CREATE POLICY "Public insert audit_logs" ON audit_logs FOR INSERT WITH CHECK (true);
+  END IF;
+  
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'audit_logs' AND policyname = 'Service role all audit_logs') THEN
     CREATE POLICY "Service role all audit_logs" ON audit_logs FOR ALL 
       USING (auth.jwt() ->> 'role' = 'service_role');

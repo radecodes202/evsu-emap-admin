@@ -15,6 +15,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useBuilding } from '../hooks/useBuildings';
 import { EVSU_CENTER } from '../config/api';
+import { loadCampusConfig } from '../utils/campusConfig';
 
 // Fix for default marker icons in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -56,11 +57,12 @@ export default function BuildingPreviewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: building, isLoading, error } = useBuilding(id);
+  const campus = loadCampusConfig();
 
   const footprint = useMemo(() => {
     if (!building) return null;
-    const lat = parseFloat(building.latitude) || EVSU_CENTER.latitude;
-    const lng = parseFloat(building.longitude) || EVSU_CENTER.longitude;
+    const lat = parseFloat(building.latitude) || campus.center.latitude || EVSU_CENTER.latitude;
+    const lng = parseFloat(building.longitude) || campus.center.longitude || EVSU_CENTER.longitude;
     const width = parseFloat(building.width_meters) || 20;
     const height = parseFloat(building.height_meters) || 20;
     const rotation = parseFloat(building.rotation_degrees) || 0;
@@ -129,7 +131,7 @@ export default function BuildingPreviewPage() {
             </Typography>
             <Box sx={{ height: 400, width: '100%', borderRadius: 1, overflow: 'hidden' }}>
               <MapContainer
-                center={footprint?.center || [EVSU_CENTER.latitude, EVSU_CENTER.longitude]}
+                center={footprint?.center || [campus.center.latitude, campus.center.longitude]}
                 zoom={16}
                 style={{ height: '100%', width: '100%' }}
               >

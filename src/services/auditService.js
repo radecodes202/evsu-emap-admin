@@ -31,20 +31,42 @@ export const auditService = {
   },
 
   async logEvent(eventData) {
+    // Best-effort user context from localStorage
+    let userCtx = null
+    try {
+      const stored = localStorage.getItem('user')
+      if (stored) userCtx = JSON.parse(stored)
+    } catch (e) {
+      // ignore
+    }
+
+    // Helper to validate UUID-ish strings; if not, return null
+    const toUuidOrNull = (val) => {
+      if (!val || typeof val !== 'string') return null
+      // basic UUID v4 format check
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      return uuidRegex.test(val) ? val : null
+    }
+
+    const actionType = (eventData.action_type || '').toUpperCase() || 'UNKNOWN'
+    const entityType = (eventData.entity_type || '').toLowerCase() || 'unknown'
+
+    const payload = {
+      user_id: toUuidOrNull(eventData.user_id) ?? toUuidOrNull(userCtx?.id),
+      user_email: eventData.user_email ?? userCtx?.email ?? null,
+      action_type: actionType,
+      entity_type: entityType,
+      entity_id: eventData.entity_id || null,
+      old_values: eventData.old_values || null,
+      new_values: eventData.new_values || null,
+      description: eventData.description || null,
+      ip_address: eventData.ip_address || null,
+      user_agent: eventData.user_agent || (typeof navigator !== 'undefined' ? navigator.userAgent : null),
+    }
+
     const { data, error } = await supabase
       .from('audit_logs')
-      .insert({
-        user_id: eventData.user_id || null,
-        user_email: eventData.user_email || null,
-        action_type: eventData.action_type,
-        entity_type: eventData.entity_type,
-        entity_id: eventData.entity_id || null,
-        old_values: eventData.old_values || null,
-        new_values: eventData.new_values || null,
-        description: eventData.description || null,
-        ip_address: eventData.ip_address || null,
-        user_agent: eventData.user_agent || null,
-      })
+      .insert(payload)
       .select()
       .single()
     

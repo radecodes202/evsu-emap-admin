@@ -9,11 +9,25 @@ if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Required variables: VITE_SUPABASE_URL, VITE_SUPABASE_SERVICE_KEY')
 }
 
-// Create client with fallback values to prevent crashes
-// The actual queries will fail gracefully if credentials are invalid
+// Create client with service role key and explicit auth configuration
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseServiceKey || 'placeholder-key'
+  supabaseServiceKey || 'placeholder-key',
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    db: {
+      schema: 'public'
+    },
+    global: {
+      headers: {
+        'apikey': supabaseServiceKey || 'placeholder-key',
+        'Authorization': `Bearer ${supabaseServiceKey || 'placeholder-key'}`
+      }
+    }
+  }
 )
 
 // Export a helper to check if Supabase is configured

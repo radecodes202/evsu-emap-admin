@@ -26,14 +26,18 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
-import { useUsers, useCreateUser, useDeleteUser } from '../hooks/useUsers';
+import { useUsers, useCreateUser, useDeleteUser,useUpdateUser } from '../hooks/useUsers';
 
 export default function UsersPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'user' });
+  const [newUser, setNewUser] = useState({ email: '', password: '', role: 'user' });
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState(null);
+  const updateMutation = useUpdateUser();
 
   const { data: users = [], isLoading, error } = useUsers();
   const createMutation = useCreateUser();
@@ -41,7 +45,8 @@ export default function UsersPage() {
 
   const handleCreateSuccess = () => {
       setCreateDialogOpen(false);
-      setNewUser({ email: '', password: '', name: '', role: 'user' });
+      setNewUser({ email: '', password: '', role: 'user' });
+      setSearchQuery(''); // Clear search query after creating user
   };
 
   const handleDeleteSuccess = () => {
@@ -58,9 +63,42 @@ export default function UsersPage() {
     if (userToDelete) {
       deleteMutation.mutate(userToDelete.id, {
         onSuccess: handleDeleteSuccess,
+        onError: (error) => {
+          console.error('Error deleting user:', error)
+          // You can add a toast/alert here to show the error to the user
+          alert(`Failed to delete user: ${error.message}`)
+        }
       });
     }
   };
+
+  const handleEditClick = (user) => {
+    setUserToEdit({ ...user });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setEditDialogOpen(false);
+    setUserToEdit(null);
+  };
+
+  const handleEditSubmit = () => {
+    if (userToEdit) {
+      updateMutation.mutate(
+        { 
+          id: userToEdit.id, 
+          updates: {
+            email: userToEdit.email,
+            name: userToEdit.name,
+            role: userToEdit.role,
+            is_active: userToEdit.is_active !== undefined ? userToEdit.is_active : true,
+          }
+        },
+        { onSuccess: handleEditSuccess }
+      );
+    }
+  };
+
 
   const handleCreateSubmit = () => {
     createMutation.mutate(newUser, {
@@ -74,7 +112,6 @@ export default function UsersPage() {
     const query = searchQuery.toLowerCase();
     return users.filter((user) =>
       user.email?.toLowerCase().includes(query) ||
-      user.name?.toLowerCase().includes(query) ||
       user.role?.toLowerCase().includes(query) ||
       user.id?.toString().includes(query)
     );
@@ -119,6 +156,7 @@ export default function UsersPage() {
             placeholder="Search users..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            autoComplete="off" // Prevent browser autocomplete
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -143,7 +181,6 @@ export default function UsersPage() {
           <TableHead>
             <TableRow>
               <TableCell>ID</TableCell>
-              <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Role</TableCell>
               <TableCell align="right">Actions</TableCell>
@@ -152,7 +189,7 @@ export default function UsersPage() {
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={4} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
                     {users.length === 0
                       ? 'No users found. Click "Add User" to create one.'
@@ -164,7 +201,6 @@ export default function UsersPage() {
               filteredUsers.map((user) => (
                 <TableRow key={user.id} hover>
                   <TableCell>{user.id}</TableCell>
-                  <TableCell>{user.name || 'N/A'}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Chip
@@ -174,7 +210,7 @@ export default function UsersPage() {
                     />
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton size="small" color="primary">
+                    <IconButton size="small" color="primary" onClick={() => handleEditClick(user)}>
                       <EditIcon />
                     </IconButton>
                     <IconButton
@@ -199,18 +235,12 @@ export default function UsersPage() {
           <Box sx={{ pt: 2 }}>
             <TextField
               fullWidth
-              label="Name"
-              value={newUser.name}
-              onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-              margin="normal"
-            />
-            <TextField
-              fullWidth
               label="Email"
               type="email"
               value={newUser.email}
               onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
               margin="normal"
+              required
             />
             <TextField
               fullWidth
@@ -219,6 +249,7 @@ export default function UsersPage() {
               value={newUser.password}
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               margin="normal"
+              required
             />
             <TextField
               fullWidth
@@ -244,6 +275,47 @@ export default function UsersPage() {
             disabled={createMutation.isLoading}
           >
             {createMutation.isLoading ? <CircularProgress size={20} /> : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit User</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={userToEdit?.email || ''}
+              onChange={(e) => setUserToEdit(prev => ({ ...prev, email: e.target.value }))}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              select
+              label="Role"
+              value={userToEdit?.role || 'user'}
+              onChange={(e) => setUserToEdit(prev => ({ ...prev, role: e.target.value }))}
+              margin="normal"
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </TextField>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleEditSubmit}
+            variant="contained"
+            disabled={updateMutation.isLoading}
+          >
+            {updateMutation.isLoading ? <CircularProgress size={20} /> : 'Update'}
           </Button>
         </DialogActions>
       </Dialog>

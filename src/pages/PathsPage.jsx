@@ -55,7 +55,7 @@ export default function PathsPage() {
 
   const handleDeleteConfirm = () => {
     if (pathToDelete) {
-      deleteMutation.mutate(pathToDelete.id, {
+      deleteMutation.mutate(pathToDelete.path_id, {
         onSuccess: handleDeleteSuccess,
       });
     }
@@ -63,7 +63,7 @@ export default function PathsPage() {
 
   const handleToggleActive = (path) => {
     updateMutation.mutate({
-      id: path.id,
+      id: path.path_id,
       updates: { is_active: !path.is_active },
     });
   };
@@ -83,7 +83,7 @@ export default function PathsPage() {
       filtered = filtered.filter((path) =>
         path.path_name?.toLowerCase().includes(query) ||
         path.path_type?.toLowerCase().includes(query) ||
-        path.id?.toString().includes(query)
+        path.path_id?.toString().includes(query)
       );
     }
     
@@ -112,7 +112,7 @@ export default function PathsPage() {
             {error.message}
             <br />
             <br />
-            Make sure you've run the <code>database-migration-users-paths.sql</code> script in Supabase.
+            Make sure you've run the <code>supabase-fresh-setup.sql</code> script in Supabase.
           </Typography>
         </Alert>
       </Box>
@@ -202,7 +202,7 @@ export default function PathsPage() {
               </TableRow>
             ) : (
               filteredPaths.map((path) => (
-                <TableRow key={path.id} hover>
+                <TableRow key={path.path_id} hover>
                   <TableCell>
                     <Typography variant="body2" fontWeight="medium">
                       {path.path_name || 'Unnamed Path'}
@@ -225,7 +225,7 @@ export default function PathsPage() {
                   <TableCell align="right">
                     <IconButton
                       size="small"
-                      onClick={() => navigate(`/paths/edit/${path.id}`)}
+                      onClick={() => navigate(`/paths/edit/${path.path_id}`)}
                       color="primary"
                     >
                       <EditIcon />

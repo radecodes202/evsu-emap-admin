@@ -3,51 +3,30 @@ import { auditService } from './auditService'
 
 export const userService = {
   async getAll() {
-    // Test profiles table first with a simple query
-    const profilesTest = await supabase
-      .from('profiles')
-      .select('id')
-      .limit(1)
-    
-    console.log('Profiles test result:', profilesTest)
-    
-    if (profilesTest.error) {
-      console.error('Profiles table error details:', {
-        message: profilesTest.error.message,
-        details: profilesTest.error.details,
-        hint: profilesTest.error.hint,
-        code: profilesTest.error.code
-      })
-      // If profiles fails, just return admin_users
-      const adminUsersResult = await supabase
-        .from('admin_users')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
-      if (adminUsersResult.error) throw adminUsersResult.error
-      return (adminUsersResult.data || []).map(u => ({ ...u, _source: 'admin_users' }))
-    }
-    
-    // Fetch from both tables
-    const [adminUsersResult, profilesResult] = await Promise.all([
+    // Fetch from both admin_users and users tables
+    const [adminUsersResult, usersResult] = await Promise.all([
       supabase
         .from('admin_users')
         .select('*')
         .order('created_at', { ascending: false }),
       supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .order('created_at', { ascending: false })
     ])
 
-    if (adminUsersResult.error) throw adminUsersResult.error
-    if (profilesResult.error) throw profilesResult.error
+    if (adminUsersResult.error) {
+      console.error('Error fetching admin_users:', adminUsersResult.error)
+    }
+    if (usersResult.error) {
+      console.error('Error fetching users:', usersResult.error)
+    }
 
     // Combine and mark source
     const adminUsers = (adminUsersResult.data || []).map(u => ({ ...u, _source: 'admin_users' }))
-    const profiles = (profilesResult.data || []).map(u => ({ ...u, _source: 'profiles' }))
+    const users = (usersResult.data || []).map(u => ({ ...u, _source: 'users' }))
     
-    return [...adminUsers, ...profiles].sort((a, b) => 
+    return [...adminUsers, ...users].sort((a, b) => 
       new Date(b.created_at) - new Date(a.created_at)
     )
   },
@@ -68,160 +47,90 @@ export const userService = {
       return { ...data, _source: 'admin_users' }
     }
 
-    // Try profiles if not found in admin_users
+    // Try users table if not found in admin_users
     const result = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('id', id)
       .single()
     
     if (result.error) throw result.error
-    return { ...result.data, _source: 'profiles' }
+    return { ...result.data, _source: 'users' }
   },
 
   async create(user) {
-    // Validate required fields (remove name requirement)
+    // Validate required fields
     if (!user.email) {
       throw new Error('Email is required')
     }
+    if (!user.name) {
+      throw new Error('Name is required')
+    }
 
-    // Determine which table to use based on role
-    const isAdmin = user.role === 'admin'
-    const tableName = isAdmin ? 'admin_users' : 'profiles'
-    const entityType = isAdmin ? 'admin_user' : 'profile'
-
-    // Build userData based on table - profiles doesn't have name column
+    // All admin panel users go to admin_users table
+    // Mobile app users sign up via Supabase Auth (creates entry in users table automatically)
     const userData = {
       email: user.email.trim(),
-      role: user.role || 'user',
+      name: user.name.trim(),
+      role: user.role || 'admin',
       is_active: user.is_active !== undefined ? user.is_active : true,
     }
 
-    // Only include name for admin_users table
-    if (isAdmin) {
-      userData.name = user.name || user.email.trim() // Use email as name if not provided
-    } else {
-      // Generate UUID for profiles table (since it doesn't have default)
-      userData.id = crypto.randomUUID()
-    }
+    // Check if email already exists
+    const { data: existing } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('email', userData.email)
+      .maybeSingle()
 
-    // Check if email already exists in either table
-    const [adminCheck, profileCheck] = await Promise.all([
-      supabase.from('admin_users').select('id').eq('email', userData.email).maybeSingle(),
-      supabase.from('profiles').select('id').eq('email', userData.email).maybeSingle()
-    ])
-
-    // Handle errors from the checks (ignore "not found" errors)
-    if (adminCheck.error && adminCheck.error.code !== 'PGRST116') {
-      throw adminCheck.error
-    }
-    if (profileCheck.error && profileCheck.error.code !== 'PGRST116') {
-      throw profileCheck.error
-    }
-
-    if (adminCheck.data || profileCheck.data) {
+    if (existing) {
       throw new Error('Email already exists')
     }
 
-    console.log('Creating user:', { userData, tableName, isAdmin })
-
     const { data, error } = await supabase
-      .from(tableName)
+      .from('admin_users')
       .insert(userData)
       .select()
       .single()
     
     if (error) {
-      console.error('Error creating user:', {
-        error,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-        tableName,
-        userData
-      })
+      console.error('Error creating admin user:', error)
       throw error
     }
     
     try {
       await auditService.logEvent({
         action_type: 'CREATE',
-        entity_type: entityType,
+        entity_type: 'admin_user',
         entity_id: data.id,
         new_values: userData,
-        description: `Created ${entityType} ${userData.email}`,
+        description: `Created admin user ${userData.email}`,
       })
     } catch (e) {
-      console.warn(`Audit log failed (create ${entityType}):`, e)
+      console.warn('Audit log failed (create admin_user):', e)
     }
     
-    return { ...data, _source: tableName }
+    return { ...data, _source: 'admin_users' }
   },
 
   async update(id, updates) {
     // First, find which table the user is in
     const user = await this.getById(id)
-    const tableName = user._source || 'profiles'
-    const entityType = tableName === 'admin_users' ? 'admin_user' : 'profile'
+    const tableName = user._source || 'admin_users'
+    const entityType = tableName === 'admin_users' ? 'admin_user' : 'user'
 
-    const updateData = {
-      email: updates.email,
-      name: updates.name,
-      role: updates.role,
-      is_active: updates.is_active,
+    const updateData = {}
+    
+    if (updates.email !== undefined) updateData.email = updates.email
+    if (updates.name !== undefined) updateData.name = updates.name
+    if (updates.role !== undefined) updateData.role = updates.role
+    if (updates.is_active !== undefined) updateData.is_active = updates.is_active
+
+    // users table doesn't have name column
+    if (tableName === 'users') {
+      delete updateData.name
     }
 
-    // Remove undefined values
-    Object.keys(updateData).forEach(key => 
-      updateData[key] === undefined && delete updateData[key]
-    )
-
-    // If role changed, we might need to move between tables
-    if (updates.role && updates.role !== user.role) {
-      const newIsAdmin = updates.role === 'admin'
-      const newTableName = newIsAdmin ? 'admin_users' : 'profiles'
-      
-      // If moving to different table, delete from old and insert to new
-      if (tableName !== newTableName) {
-        // Delete from old table
-        const { error: deleteError } = await supabase
-          .from(tableName)
-          .delete()
-          .eq('id', id)
-        
-        if (deleteError) throw deleteError
-
-        // Insert into new table
-        const { data, error: insertError } = await supabase
-          .from(newTableName)
-          .insert({
-            ...user,
-            ...updateData,
-            id: id, // Keep same ID
-          })
-          .select()
-          .single()
-        
-        if (insertError) throw insertError
-
-        try {
-          await auditService.logEvent({
-            action_type: 'UPDATE',
-            entity_type: newIsAdmin ? 'admin_user' : 'profile',
-            entity_id: id,
-            new_values: updateData,
-            description: `Updated and moved ${entityType} ${updateData.email || id} to ${newTableName}`,
-          })
-        } catch (e) {
-          console.warn(`Audit log failed (update ${entityType}):`, e)
-        }
-        
-        return { ...data, _source: newTableName }
-      }
-    }
-
-    // Normal update in same table
     const { data, error } = await supabase
       .from(tableName)
       .update(updateData)
@@ -248,47 +157,31 @@ export const userService = {
 
   async delete(id) {
     try {
-      // Find which table the user is in - use userService.getById instead of this.getById
-      const user = await userService.getById(id)
+      const user = await this.getById(id)
       
       if (!user) {
         throw new Error('User not found')
       }
       
-      const tableName = user._source || 'profiles'
-      const entityType = tableName === 'admin_users' ? 'admin_user' : 'profile'
+      const tableName = user._source || 'admin_users'
+      const entityType = tableName === 'admin_users' ? 'admin_user' : 'user'
 
-      console.log('Deleting user:', { id, tableName, entityType })
-
-      const { error, data } = await supabase
+      const { error } = await supabase
         .from(tableName)
         .delete()
         .eq('id', id)
-        .select() // Add select to verify deletion
       
       if (error) {
-        console.error('Error deleting user:', {
-          error,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-          tableName,
-          id
-        })
+        console.error('Error deleting user:', error)
         throw error
       }
 
-      console.log('User deleted successfully:', data)
-
-      // If user is from profiles and has auth user, also delete from auth
-      if (tableName === 'profiles') {
+      // If user is from users table and has auth user, also delete from auth
+      if (tableName === 'users') {
         try {
           await supabase.auth.admin.deleteUser(id)
-          console.log('Auth user deleted successfully')
         } catch (authError) {
-          // Log but don't fail if auth user doesn't exist
-          console.warn('Could not delete auth user (may not exist):', authError)
+          console.warn('Could not delete auth user:', authError)
         }
       }
       

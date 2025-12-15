@@ -87,16 +87,16 @@ export default function PathFormPage() {
       setValue('is_active', path.is_active !== false);
       if (path.waypoints && path.waypoints.length > 0) {
         const sortedWaypoints = [...path.waypoints].sort(
-          (a, b) => (a.sequence_order || 0) - (b.sequence_order || 0)
+          (a, b) => (a.sequence || 0) - (b.sequence || 0)
         );
         setWaypoints(
           sortedWaypoints.map((wp) => ({
             latitude: parseFloat(wp.latitude),
             longitude: parseFloat(wp.longitude),
-            sequence: wp.sequence_order ?? 0,
+            sequence: wp.sequence ?? 0,
             is_accessible: wp.is_accessible !== false,
-            notes: wp.notes || wp.description || '',
-            waypoint_id: wp.id,
+            notes: wp.notes || '',
+            waypoint_id: wp.waypoint_id,
           }))
         );
       }
@@ -110,11 +110,11 @@ export default function PathFormPage() {
     const payload = {
       ...formData,
       waypoints: waypoints.map((wp, index) => ({
-        sequence_order: index + 1,
+        sequence: index + 1,
         latitude: wp.latitude,
         longitude: wp.longitude,
-        name: wp.name || null,
-        description: wp.notes || null,
+        is_accessible: wp.is_accessible !== false,
+        notes: wp.notes || null,
       })),
     };
 

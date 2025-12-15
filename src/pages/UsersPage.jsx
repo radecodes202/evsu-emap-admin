@@ -32,7 +32,7 @@ export default function UsersPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ email: '', password: '', role: 'user' });
+  const [newUser, setNewUser] = useState({ email: '', name: '', role: 'admin' });
   const [searchQuery, setSearchQuery] = useState('');
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -45,7 +45,7 @@ export default function UsersPage() {
 
   const handleCreateSuccess = () => {
       setCreateDialogOpen(false);
-      setNewUser({ email: '', password: '', role: 'user' });
+      setNewUser({ email: '', name: '', role: 'admin' });
       setSearchQuery(''); // Clear search query after creating user
   };
 
@@ -139,7 +139,7 @@ export default function UsersPage() {
             {error.message}
             <br />
             <br />
-            Make sure you've run the <code>database-migration-users-paths.sql</code> script in Supabase.
+            Make sure you've run the <code>supabase-fresh-setup.sql</code> script in Supabase.
           </Typography>
         </Alert>
       </Box>
@@ -180,16 +180,17 @@ export default function UsersPage() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
+              <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Role</TableCell>
+              <TableCell>Source</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={5} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
                     {users.length === 0
                       ? 'No users found. Click "Add User" to create one.'
@@ -200,13 +201,21 @@ export default function UsersPage() {
             ) : (
               filteredUsers.map((user) => (
                 <TableRow key={user.id} hover>
-                  <TableCell>{user.id}</TableCell>
+                  <TableCell>{user.name || '-'}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Chip
-                      label={user.role || (user.isAdmin ? 'admin' : 'user')}
-                      color={user.role === 'admin' || user.isAdmin ? 'primary' : 'default'}
+                      label={user.role || 'user'}
+                      color={user.role === 'admin' ? 'primary' : 'default'}
                       size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={user._source === 'admin_users' ? 'Admin Panel' : 'Mobile App'}
+                      variant="outlined"
+                      size="small"
+                      color={user._source === 'admin_users' ? 'secondary' : 'default'}
                     />
                   </TableCell>
                   <TableCell align="right">
@@ -228,26 +237,28 @@ export default function UsersPage() {
         </Table>
       </TableContainer>
 
-      {/* Create User Dialog */}
+      {/* Create Admin User Dialog */}
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create New User</DialogTitle>
+        <DialogTitle>Create Admin User</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2 }}>
+          <DialogContentText sx={{ mb: 2 }}>
+            Create a new admin user for the admin panel. Regular users sign up via the mobile app.
+          </DialogContentText>
+          <Box sx={{ pt: 1 }}>
+            <TextField
+              fullWidth
+              label="Name"
+              value={newUser.name}
+              onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+              margin="normal"
+              required
+            />
             <TextField
               fullWidth
               label="Email"
               type="email"
               value={newUser.email}
               onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Password"
-              type="password"
-              value={newUser.password}
-              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               margin="normal"
               required
             />
@@ -262,8 +273,8 @@ export default function UsersPage() {
                 native: true,
               }}
             >
-              <option value="user">User</option>
               <option value="admin">Admin</option>
+              <option value="user">User (Staff)</option>
             </TextField>
           </Box>
         </DialogContent>
@@ -272,7 +283,7 @@ export default function UsersPage() {
           <Button
             onClick={handleCreateSubmit}
             variant="contained"
-            disabled={createMutation.isLoading}
+            disabled={createMutation.isLoading || !newUser.email || !newUser.name}
           >
             {createMutation.isLoading ? <CircularProgress size={20} /> : 'Create'}
           </Button>
@@ -284,6 +295,15 @@ export default function UsersPage() {
         <DialogTitle>Edit User</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
+            {userToEdit?._source === 'admin_users' && (
+              <TextField
+                fullWidth
+                label="Name"
+                value={userToEdit?.name || ''}
+                onChange={(e) => setUserToEdit(prev => ({ ...prev, name: e.target.value }))}
+                margin="normal"
+              />
+            )}
             <TextField
               fullWidth
               label="Email"
@@ -305,6 +325,7 @@ export default function UsersPage() {
             >
               <option value="user">User</option>
               <option value="admin">Admin</option>
+              <option value="guest">Guest</option>
             </TextField>
           </Box>
         </DialogContent>

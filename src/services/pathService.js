@@ -4,15 +4,16 @@ import { auditService } from './auditService'
 export const pathService = {
   async getAll() {
     const { data, error } = await supabase
-      .from('routes')
+      .from('paths')
       .select(`
         *,
         waypoints (
-          id,
-          sequence_order,
+          waypoint_id,
+          sequence,
           latitude,
           longitude,
-          name
+          is_accessible,
+          notes
         )
       `)
       .order('created_at', { ascending: false })
@@ -23,19 +24,19 @@ export const pathService = {
 
   async getById(id) {
     const { data, error } = await supabase
-      .from('routes')
+      .from('paths')
       .select(`
         *,
         waypoints (
-          id,
-          sequence_order,
+          waypoint_id,
+          sequence,
           latitude,
           longitude,
-          name,
-          description
+          is_accessible,
+          notes
         )
       `)
-      .eq('id', id)
+      .eq('path_id', id)
       .single()
     
     if (error) throw error
@@ -46,17 +47,11 @@ export const pathService = {
     const pathData = {
       path_name: path.path_name,
       path_type: path.path_type || 'walkway',
-      from_building_id: path.from_building_id || null,
-      to_building_id: path.to_building_id || null,
-      path_coordinates: path.path_coordinates || null,
-      distance_meters: path.distance_meters || null,
-      estimated_minutes: path.estimated_minutes || null,
-      description: path.description || null,
       is_active: path.is_active !== undefined ? path.is_active : true,
     }
 
     const { data, error } = await supabase
-      .from('routes')
+      .from('paths')
       .insert(pathData)
       .select()
       .single()
@@ -66,12 +61,12 @@ export const pathService = {
     // If waypoints are provided, create them
     if (path.waypoints && path.waypoints.length > 0) {
       const waypoints = path.waypoints.map((wp, index) => ({
-        route_id: data.id,
-        sequence_order: index + 1,
+        path_id: data.path_id,
+        sequence: index + 1,
         latitude: wp.latitude,
         longitude: wp.longitude,
-        name: wp.name || null,
-        description: wp.description || null,
+        is_accessible: wp.is_accessible !== false,
+        notes: wp.notes || wp.description || null,
       }))
 
       const { error: waypointsError } = await supabase
@@ -84,53 +79,68 @@ export const pathService = {
     try {
       await auditService.logEvent({
         action_type: 'CREATE',
-        entity_type: 'route',
-        entity_id: data.id,
+        entity_type: 'path',
+        entity_id: data.path_id?.toString(),
         new_values: pathData,
-        description: `Created route ${pathData.path_name || data.id}`,
+        description: `Created path ${pathData.path_name || data.path_id}`,
       })
     } catch (e) {
-      console.warn('Audit log failed (create route):', e)
+      console.warn('Audit log failed (create path):', e)
     }
     return data
   },
 
   async update(id, updates) {
-    const updateData = {
-      path_name: updates.path_name,
-      path_type: updates.path_type,
-      from_building_id: updates.from_building_id,
-      to_building_id: updates.to_building_id,
-      path_coordinates: updates.path_coordinates,
-      distance_meters: updates.distance_meters,
-      estimated_minutes: updates.estimated_minutes,
-      description: updates.description,
-      is_active: updates.is_active,
-    }
-
-    // Remove undefined values
-    Object.keys(updateData).forEach(key => 
-      updateData[key] === undefined && delete updateData[key]
-    )
+    const updateData = {}
+    
+    if (updates.path_name !== undefined) updateData.path_name = updates.path_name
+    if (updates.path_type !== undefined) updateData.path_type = updates.path_type
+    if (updates.is_active !== undefined) updateData.is_active = updates.is_active
 
     const { data, error } = await supabase
-      .from('routes')
+      .from('paths')
       .update(updateData)
-      .eq('id', id)
+      .eq('path_id', id)
       .select()
       .single()
     
     if (error) throw error
+
+    // If waypoints are provided, delete old ones and create new ones
+    if (updates.waypoints && updates.waypoints.length > 0) {
+      // Delete existing waypoints
+      await supabase
+        .from('waypoints')
+        .delete()
+        .eq('path_id', id)
+
+      // Create new waypoints
+      const waypoints = updates.waypoints.map((wp, index) => ({
+        path_id: id,
+        sequence: index + 1,
+        latitude: wp.latitude,
+        longitude: wp.longitude,
+        is_accessible: wp.is_accessible !== false,
+        notes: wp.notes || wp.description || null,
+      }))
+
+      const { error: waypointsError } = await supabase
+        .from('waypoints')
+        .insert(waypoints)
+
+      if (waypointsError) throw waypointsError
+    }
+
     try {
       await auditService.logEvent({
         action_type: 'UPDATE',
-        entity_type: 'route',
-        entity_id: id,
+        entity_type: 'path',
+        entity_id: id?.toString(),
         new_values: updateData,
-        description: `Updated route ${updateData.path_name || id}`,
+        description: `Updated path ${updateData.path_name || id}`,
       })
     } catch (e) {
-      console.warn('Audit log failed (update route):', e)
+      console.warn('Audit log failed (update path):', e)
     }
     return data
   },
@@ -138,45 +148,45 @@ export const pathService = {
   async delete(id) {
     // Waypoints will be deleted automatically due to CASCADE
     const { error } = await supabase
-      .from('routes')
+      .from('paths')
       .delete()
-      .eq('id', id)
+      .eq('path_id', id)
     
     if (error) throw error
     try {
       await auditService.logEvent({
         action_type: 'DELETE',
-        entity_type: 'route',
-        entity_id: id,
-        description: `Deleted route ${id}`,
+        entity_type: 'path',
+        entity_id: id?.toString(),
+        description: `Deleted path ${id}`,
       })
     } catch (e) {
-      console.warn('Audit log failed (delete route):', e)
+      console.warn('Audit log failed (delete path):', e)
     }
   },
 
-  async addWaypoint(routeId, waypoint) {
-    // Get current max sequence order
+  async addWaypoint(pathId, waypoint) {
+    // Get current max sequence
     const { data: existing } = await supabase
       .from('waypoints')
-      .select('sequence_order')
-      .eq('route_id', routeId)
-      .order('sequence_order', { ascending: false })
+      .select('sequence')
+      .eq('path_id', pathId)
+      .order('sequence', { ascending: false })
       .limit(1)
 
     const nextSequence = existing && existing.length > 0 
-      ? existing[0].sequence_order + 1 
+      ? existing[0].sequence + 1 
       : 1
 
     const { data, error } = await supabase
       .from('waypoints')
       .insert({
-        route_id: routeId,
-        sequence_order: nextSequence,
+        path_id: pathId,
+        sequence: nextSequence,
         latitude: waypoint.latitude,
         longitude: waypoint.longitude,
-        name: waypoint.name || null,
-        description: waypoint.description || null,
+        is_accessible: waypoint.is_accessible !== false,
+        notes: waypoint.notes || null,
       })
       .select()
       .single()
@@ -189,7 +199,7 @@ export const pathService = {
     const { data, error } = await supabase
       .from('waypoints')
       .update(updates)
-      .eq('id', waypointId)
+      .eq('waypoint_id', waypointId)
       .select()
       .single()
     
@@ -201,7 +211,7 @@ export const pathService = {
     const { error } = await supabase
       .from('waypoints')
       .delete()
-      .eq('id', waypointId)
+      .eq('waypoint_id', waypointId)
     
     if (error) throw error
   }

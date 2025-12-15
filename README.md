@@ -4,7 +4,9 @@ Admin panel for managing the EVSU eMAP campus navigation and mapping system. Bui
 
 ## 🎯 Project Overview
 
-The EVSU eMAP Admin Panel is a comprehensive web application for managing campus data including buildings, rooms, pathways, users, and system settings. It integrates directly with Supabase (PostgreSQL + PostGIS) for data storage and requires no separate backend server.
+The EVSU eMAP Admin Panel is a comprehensive web application for managing campus data including buildings, rooms, pathways, users, and system settings. It integrates directly with Supabase (PostgreSQL + PostGIS) for data storage.
+
+**This is the Admin Panel** - the mobile app is a separate project that consumes the same Supabase database.
 
 ## ✨ Features
 
@@ -12,417 +14,281 @@ The EVSU eMAP Admin Panel is a comprehensive web application for managing campus
 
 - 🏢 **Building Management** - Create, edit, delete buildings with rectangular footprints
 - 🚪 **Rooms & Locations** - Manage rooms within buildings (floors, types, capacity)
-- 🛤️ **Paths & Walkways** - Create pathways between buildings with waypoints
-- 👥 **User Management** - Manage admin users and roles
+- 🛤️ **Paths & Walkways** - Create pathways with waypoints for navigation
+- 👥 **User Management** - Manage admin panel users and view mobile app users
 - 📊 **Dashboard** - Overview with statistics and quick actions
-- 🗺️ **Interactive Maps** - Leaflet maps for visual building/room/path management
-- 🔒 **Audit Trail** - Track all system actions for security compliance
-- 💬 **User Feedback** - Manage user feedback and suggestions
-- 📚 **Help & Documentation** - Built-in user manual
-- ℹ️ **About Page** - Project information and technology stack
-
-### Key Capabilities
-
-- **Indoor Mapping Support** - High-precision coordinates for room-level accuracy
-- **Rectangular Building Footprints** - Buildings displayed as rectangles with customizable dimensions
-- **Role-Based Access Control** - Admin and user role management
-- **Real-time Data Sync** - Direct Supabase integration for instant updates
-- **Form Validation** - Comprehensive validation with React Hook Form + Yup
-- **Responsive Design** - Works on desktop, tablet, and mobile devices
+- 🗺️ **Interactive Maps** - Leaflet maps for visual editing
+- 🔒 **Audit Trail** - Track all system actions
+- 💬 **User Feedback** - Manage feedback from mobile app users
+- ⚙️ **Campus Config** - Configure campus center and boundaries
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **React 18** - UI framework
-- **Vite** - Build tool and dev server
-- **Material-UI (MUI)** - Component library
-- **React Router DOM** - Client-side routing
-- **React Query** - Data fetching, caching, and state management
-- **React Hook Form + Yup** - Form handling and validation
-- **Leaflet/React-Leaflet** - Interactive maps
-- **@supabase/supabase-js** - Supabase client library
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18, Vite, Material-UI |
+| State | React Query, React Hook Form |
+| Maps | Leaflet / React-Leaflet |
+| Database | Supabase (PostgreSQL + PostGIS) |
+| Auth | Supabase Auth + Local admin auth |
 
-### Backend (Supabase)
-- **PostgreSQL** - Database
-- **PostGIS** - Geospatial extension
-- **Row Level Security (RLS)** - Security policies
-- **Storage** - File storage for building images
+## 🚀 Quick Start
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 16+ and npm
-- Supabase account and project (see `SUPABASE_SETUP.md`)
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd evsu-emap-admin
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables:**
-   
-   Create a `.env` file in the root directory:
-   ```env
-   VITE_SUPABASE_URL=https://your-project-id.supabase.co
-   VITE_SUPABASE_SERVICE_KEY=your-service-role-key
-   VITE_ADMIN_EMAIL=admin@evsu.edu.ph
-   VITE_ADMIN_PASSWORD=admin123
-   ```
-   
-   See `ENV_EXAMPLE.md` for the complete template.
-
-4. **Set up the database:**
-   
-   Run the SQL scripts in Supabase SQL Editor (in order):
-   - `database-setup.sql` - Core tables and PostGIS
-   - `database-migration-users-paths.sql` - Users and enhanced paths
-   - `database-audit-trail-feedback.sql` - Audit trail and feedback
-   - `database-migration-building-rectangles.sql` - Building dimensions
-
-   See `SUPABASE_SETUP.md` for detailed instructions.
-
-5. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-
-6. **Access the application:**
-   
-   Open `http://localhost:5173` (or the port shown in terminal)
-   
-   Login with credentials from your `.env` file.
-
-### Build for Production
+### 1. Install Dependencies
 
 ```bash
-npm run build
+npm install
 ```
 
-The built files will be in the `dist` directory.
+### 2. Set Up Supabase
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to **SQL Editor** and run the entire `supabase-fresh-setup.sql` script
+3. Get your keys from **Settings → API**
+
+### 3. Configure Environment
+
+Create a `.env` file:
+
+```env
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_SERVICE_KEY=your-service-role-key
+VITE_ADMIN_EMAIL=admin@email.com
+VITE_ADMIN_PASSWORD=********
+```
+
+> ⚠️ Use the **service_role** key (not anon key) for the admin panel
+
+### 4. Start Development Server
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:5173`
 
 ## 📁 Project Structure
 
 ```
 evsu-emap-admin/
 ├── src/
-│   ├── components/          # Reusable components
-│   │   ├── Layout/         # Dashboard layout with sidebar
-│   │   ├── ProtectedRoute.jsx
-│   │   └── StatCard.jsx
-│   ├── config/             # Configuration files
-│   │   └── api.js          # API settings and campus boundaries
-│   ├── context/            # React Context providers
-│   │   └── AuthContext.jsx # Authentication state
-│   ├── hooks/              # React Query hooks
+│   ├── components/           # Reusable components
+│   │   ├── Layout/          # Dashboard layout
+│   │   └── ProtectedRoute.jsx
+│   ├── config/
+│   │   └── api.js           # Campus boundaries config
+│   ├── context/
+│   │   └── AuthContext.jsx  # Auth state
+│   ├── hooks/               # React Query hooks
 │   │   ├── useBuildings.js
-│   │   ├── useUsers.js
+│   │   ├── useLocations.js
 │   │   ├── usePaths.js
-│   │   └── useLocations.js
-│   ├── lib/                # Library configurations
-│   │   └── supabase.js     # Supabase client
-│   ├── pages/              # Page components
-│   │   ├── DashboardPage.jsx
+│   │   └── useUsers.js
+│   ├── lib/
+│   │   └── supabase.js      # Supabase client
+│   ├── pages/               # Page components
 │   │   ├── BuildingsPage.jsx
 │   │   ├── BuildingFormPage.jsx
 │   │   ├── RoomsPage.jsx
-│   │   ├── RoomFormPage.jsx
 │   │   ├── PathsPage.jsx
 │   │   ├── PathFormPage.jsx
 │   │   ├── UsersPage.jsx
-│   │   ├── CampusConfigPage.jsx
-│   │   ├── ChatbotPage.jsx
-│   │   ├── SettingsPage.jsx
 │   │   ├── AuditTrailPage.jsx
 │   │   ├── FeedbackPage.jsx
-│   │   ├── HelpPage.jsx
-│   │   ├── AboutPage.jsx
-│   │   └── LoginPage.jsx
-│   ├── services/           # Service layer for Supabase
+│   │   ├── CampusConfigPage.jsx
+│   │   └── ...
+│   ├── services/            # Supabase service layer
 │   │   ├── buildingService.js
 │   │   ├── locationService.js
 │   │   ├── pathService.js
 │   │   ├── userService.js
 │   │   ├── auditService.js
 │   │   └── feedbackService.js
-│   ├── App.jsx             # Main app component with routes
-│   └── main.jsx            # Entry point
-├── database-setup.sql                    # Core database schema
-├── database-migration-users-paths.sql    # Users and paths migration
-├── database-audit-trail-feedback.sql     # Audit trail and feedback
-├── database-migration-building-rectangles.sql  # Building dimensions
-├── SUPABASE_SETUP.md                     # Supabase setup guide
-├── INDOOR_MAPPING_GUIDE.md               # Indoor mapping guide
-├── PROJECT_REQUIREMENTS_ASSESSMENT.md    # Requirements assessment
-└── README.md                             # This file
+│   ├── utils/
+│   │   └── campusConfig.js  # Campus config utility
+│   ├── App.jsx
+│   └── main.jsx
+├── docs/                     # Documentation
+├── supabase-fresh-setup.sql  # Database setup script
+└── README.md
 ```
 
 ## 🗄️ Database Schema
 
-### Core Tables
+Run `supabase-fresh-setup.sql` in Supabase SQL Editor to create all tables.
 
-- **buildings** - Building information with rectangular footprints (width, height, rotation)
-- **locations** - Rooms and locations within buildings
-- **routes** - Pathways between buildings
-- **waypoints** - Points along pathways
-- **admin_users** - Admin panel user accounts
-- **audit_logs** - System action tracking
-- **user_feedback** - User feedback submissions
-- **points_of_interest** - Campus POIs (future use)
+### Tables
 
-See `database-setup.sql` and migration scripts for full schema details.
+| Table | Purpose |
+|-------|---------|
+| `users` | Mobile app users (auto-created on signup via Supabase Auth) |
+| `buildings` | Campus buildings with dimensions (width, height, rotation) |
+| `locations` | Rooms within buildings |
+| `paths` | Admin-defined walkways for navigation |
+| `waypoints` | Points along paths |
+| `path_connections` | Connections between different paths |
+| `favorites` | User saved buildings |
+| `admin_users` | Admin panel users |
+| `audit_logs` | Action tracking |
+| `user_feedback` | Mobile app user feedback |
 
-## 🎨 Features Overview
+### Key Features
 
-### Building Management
+- **PostGIS** enabled for geospatial queries
+- **Row Level Security (RLS)** for data protection
+- **Triggers** for auto-updating timestamps and geography points
+- **Indexes** for query optimization
 
-- **Rectangular Footprints**: Buildings displayed as rectangles on the map
-- **Customizable Dimensions**: Set width, height, and rotation
-- **Interactive Map**: Click to set center, drag marker to adjust location
-- **Categories**: Academic, Administrative, Facility, Sports, Residential, Other
-- **High-Precision Coordinates**: Supports up to 15 decimal places for indoor mapping
+## 👥 User Types
 
-### Rooms & Locations
+| User Type | Table | How Created | Used For |
+|-----------|-------|-------------|----------|
+| **Admin Panel Users** | `admin_users` | Created in admin panel | Managing campus data |
+| **Mobile App Users** | `users` | Sign up in mobile app | Using the navigation app |
 
-- **Room Management**: Full CRUD for rooms within buildings
-- **Room Types**: Classroom, Laboratory, Office, Library, Lecture Hall, Conference Room, Restroom, Storage, Other
-- **Floor Management**: Assign rooms to specific floors
-- **Capacity Tracking**: Set room capacity
-- **Building Filtering**: Filter rooms by building
+### Mobile App Signup
 
-### Paths & Walkways
+Mobile app users sign up with **email + password only** (no username required):
 
-- **Path Types**: Walkway, Sidewalk, Path, Road, Indoor, Corridor, Stairs, Elevator, Ramp, Bridge, Other
-- **Waypoint Management**: Define paths with multiple waypoints
-- **Visual Editing**: Click on map to add waypoints
-- **Path Connectivity**: Link paths between buildings
+```javascript
+await supabase.auth.signUp({
+  email: 'user@example.com',
+  password: 'password123'
+})
+```
 
-### User Management
-
-- **Role-Based Access**: Admin and User roles
-- **User CRUD**: Create, edit, delete admin users
-- **Active Status**: Enable/disable users
-
-### Audit Trail
-
-- **Action Tracking**: Logs CREATE, UPDATE, DELETE, LOGIN, LOGOUT, VIEW actions
-- **Filterable Logs**: Filter by action type, entity type, user
-- **Statistics Dashboard**: View counts by action type
-- **Timestamps**: All actions timestamped
-
-### User Feedback
-
-- **Feedback Categories**: Bug Report, Feature Request, Suggestion, Complaint, Compliment
-- **Status Management**: New, In Progress, Resolved, Closed
-- **Priority Levels**: Low, Medium, High, Urgent
-- **Admin Notes**: Internal notes for feedback management
-- **Rating System**: Optional 1-5 star ratings
+A profile is automatically created in the `users` table via a database trigger.
 
 ## 🔐 Authentication
 
-### Current Implementation
+### Admin Panel Login
 
-- Simple local authentication using environment variables
-- Login with email and password from `.env`
+- Uses local authentication with `.env` credentials
 - Session stored in localStorage
-- Protected routes require authentication
+- All routes protected by `ProtectedRoute`
 
 ### Default Login
 
-- **Email**: `admin@evsu.edu.ph` (configurable in `.env`)
-- **Password**: `admin123` (configurable in `.env`)
+- **Email**: `admin@evsu.edu.ph`
+- **Password**: `admin123`
 
-**⚠️ Security Note**: For production, implement proper password hashing and consider using Supabase Auth.
+## 🎨 Features Guide
 
-## 📋 Form Dropdown Options
+### Building Management
 
-### Building Categories
-- Academic
-- Administrative
-- Facility
-- Sports
-- Residential
-- Other
+- Set building name, code, description
+- Define dimensions (width, height in meters)
+- Set rotation angle for oriented rectangles
+- Place on map with click or manual coordinates
+- Categorize: Academic, Administrative, Facility, Sports, Residential, Other
 
-### Room Types
-- Classroom
-- Laboratory
-- Office
-- Library
-- Lecture Hall
-- Conference Room
-- Restroom
-- Storage
-- Other
+### Paths & Walkways
 
-### Path Types
-- Walkway
-- Sidewalk
-- Path
-- Road
-- Indoor
-- Corridor
-- Stairs
-- Elevator
-- Ramp
-- Bridge
-- Other
+- Create paths with names and types
+- Add waypoints by clicking on map
+- Drag waypoints to adjust positions
+- Path types: Walkway, Road, Stairs, Indoor, Corridor, Elevator, etc.
 
-### User Roles
-- User
-- Admin
+### User Management
 
-### Feedback Categories
-- Bug Report
-- Feature Request
-- Suggestion
-- Complaint
-- Compliment
+- Create admin users with name, email, role
+- View mobile app users (read-only)
+- Edit roles and status
+- Delete users
 
-### Feedback Status
-- New
-- In Progress
-- Resolved
-- Closed
+### Campus Configuration
 
-### Feedback Priority
-- Low
-- Medium
-- High
-- Urgent
-
-## 🗺️ Map Features
-
-### Building Map Interaction
-
-- **Panning**: Drag the map to explore campus (doesn't change building location)
-- **Click to Set**: Click on map to set building center
-- **Marker Drag**: Drag the red center marker to move building
-- **Rectangle Display**: Buildings shown as semi-transparent maroon rectangles
-- **Manual Coordinates**: Enter coordinates directly in form fields
-
-### Coordinate Precision
-
-- Supports high-precision coordinates (up to 15 decimal places)
-- Example: `11.238602547245419`
-- Database stores up to 8 decimal places (~1.1mm precision)
-- Validated against campus boundaries
-
-## 📚 Documentation
-
-- **SUPABASE_SETUP.md** - Complete Supabase setup guide
-- **INDOOR_MAPPING_GUIDE.md** - Guide for working with buildings and pathways
-- **MIGRATION_USERS_PATHS.md** - Users and paths migration guide
-- **PROJECT_REQUIREMENTS_ASSESSMENT.md** - Requirements and rating criteria assessment
-- **ARCHITECTURE_CLARIFICATION.md** - Admin Panel vs Mobile App architecture
-- **IMPLEMENTATION_SUMMARY.md** - Feature implementation summary
+- Set campus center coordinates
+- Configure map boundaries
+- Settings saved to localStorage and used across pages
 
 ## 🔧 Configuration
 
-### Environment Variables
-
-See `.env.example` (or `ENV_EXAMPLE.md`) for all required variables:
-
-- `VITE_SUPABASE_URL` - Your Supabase project URL
-- `VITE_SUPABASE_SERVICE_KEY` - Service role key (SECRET - never commit)
-- `VITE_ADMIN_EMAIL` - Admin login email
-- `VITE_ADMIN_PASSWORD` - Admin login password
-
 ### Campus Boundaries
 
-Configure in `src/config/api.js`:
+Edit `src/config/api.js`:
 
 ```javascript
+export const EVSU_CENTER = {
+  latitude: 11.2445,
+  longitude: 125.0025,
+};
+
 export const CAMPUS_BOUNDARIES = {
-  northEast: { latitude: 11.2600, longitude: 125.0200 },
-  southWest: { latitude: 11.2300, longitude: 124.9900 },
+  northEast: { latitude: 11.26, longitude: 125.02 },
+  southWest: { latitude: 11.23, longitude: 124.99 },
 };
 ```
 
+Or configure via **Campus Config** page in the admin panel.
+
 ## 🐛 Troubleshooting
 
-### Supabase Connection Issues
+### RLS Policy Error
 
-1. **Check `.env` file**: Verify `VITE_SUPABASE_URL` and `VITE_SUPABASE_SERVICE_KEY` are set
-2. **Verify Supabase project**: Ensure project is active in Supabase dashboard
-3. **Check RLS policies**: Verify Row Level Security policies are set correctly
-4. **Check service role key**: Ensure you're using the service_role key, not anon key
+```
+new row violates row-level security policy
+```
+
+**Fix**: Make sure `.env` uses the **service_role** key (not anon key).
+
+### Tables Not Found
+
+```
+relation "paths" does not exist
+```
+
+**Fix**: Run `supabase-fresh-setup.sql` in Supabase SQL Editor.
 
 ### Map Not Loading
 
-1. **Check internet connection**: Leaflet loads tiles from OpenStreetMap
-2. **Verify Leaflet CSS**: Ensure CSS is imported in `main.jsx`
-3. **Check browser console**: Look for JavaScript errors
+1. Check internet connection (tiles load from OpenStreetMap)
+2. Verify Leaflet CSS is imported
+3. Check browser console for errors
 
-### Data Not Saving
+## 📋 Dropdown Options
 
-1. **Check Supabase connection**: Verify credentials in `.env`
-2. **Check RLS policies**: Ensure service_role has write access
-3. **Verify table exists**: Run database migration scripts
-4. **Check browser console**: Look for specific error messages
+### Building Categories
+Academic, Administrative, Facility, Sports, Residential, Other
 
-### Missing Features
+### Room Types
+Classroom, Laboratory, Office, Library, Lecture Hall, Conference Room, Restroom, Storage, Other
 
-1. **Run database migrations**: Ensure all SQL scripts are executed
-2. **Check routes**: Verify routes are added in `App.jsx`
-3. **Restart dev server**: Sometimes required after adding new pages
+### Path Types
+Walkway, Road, Stairs, Covered, Outdoor, Indoor, Corridor, Sidewalk, Elevator, Ramp, Bridge, Other
 
-## ✅ IT 313 Final Project Requirements
+### User Roles
+Admin, User, Guest
 
-All 6 final project requirements are implemented:
+### Feedback Categories
+Bug, Feature, Suggestion, Complaint, Compliment
 
-1. ✅ **Login Security** - Authentication & validation method
-2. ✅ **Level of Access/Permission** - Role-based access control
-3. ✅ **Audit Trail** - Complete action tracking system
-4. ✅ **User Feedback** - Feedback collection and management
-5. ✅ **System Help** - Comprehensive user manual (Help page)
-6. ✅ **About** - About page with project information
+## 📊 IT 313 Requirements Met
 
-## 📊 Rating Criteria
+| Requirement | Status |
+|-------------|--------|
+| Login Security | ✅ Auth validation |
+| Access Permissions | ✅ Role-based access |
+| Audit Trail | ✅ Full action tracking |
+| User Feedback | ✅ Feedback management |
+| System Help | ✅ Help page |
+| About Page | ✅ Project info |
 
-The project meets all rating criteria:
+## 🏗️ Build for Production
 
-- ✅ **Database Design (20%)** - Well-normalized schema with PostGIS
-- ✅ **Security Implementation (25%)** - RLS, RBAC, Audit Trail
-- ✅ **Advanced SQL Features (15%)** - Functions, triggers, PostGIS
-- ✅ **Transaction Management (15%)** - Supabase automatic transactions
-- ✅ **Indexing and Optimization (10%)** - Comprehensive indexing strategy
-- ✅ **Presentation and Peer Feedback (15%)** - Modern UI with feedback system
+```bash
+npm run build
+```
 
-See `PROJECT_REQUIREMENTS_ASSESSMENT.md` for detailed evaluation.
-
-## 🤝 Contributing
-
-1. Follow the existing code style
-2. Use Material-UI components consistently
-3. Implement proper error handling
-4. Add validation for all forms
-5. Update documentation for new features
+Output in `dist/` directory.
 
 ## 📝 License
 
-This project is part of the EVSU eMAP application suite, developed for educational purposes as part of the IT 313 Database Systems course.
+EVSU eMAP Admin Panel - IT 313 Database Systems Final Project
 
-© 2025 Eastern Visayas State University. All rights reserved.
-
-## 🆘 Support
-
-For issues or questions:
-1. Check the documentation files
-2. Review `TROUBLESHOOTING.md` (if exists)
-3. Check browser console for errors
-4. Verify Supabase configuration
+© 2025 Eastern Visayas State University
 
 ---
 
-**Last Updated**: 2025
-**Version**: 1.0.0
-**Status**: ✅ All requirements met, ready for presentation
+**Version**: 2.0.0  
+**Last Updated**: December 2025

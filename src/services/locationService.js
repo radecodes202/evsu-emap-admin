@@ -88,6 +88,19 @@ export const locationService = {
   },
 
   async delete(id) {
+    // Fetch location info before deletion for audit trail
+    let locationInfo = null
+    try {
+      const { data } = await supabase
+        .from('locations')
+        .select('name, room_number, building:buildings(name, code)')
+        .eq('id', id)
+        .single()
+      locationInfo = data
+    } catch (e) {
+      console.warn('Failed to fetch location info before deletion:', e)
+    }
+
     const { error } = await supabase
       .from('locations')
       .delete()
@@ -95,11 +108,18 @@ export const locationService = {
     
     if (error) throw error
     try {
+      const buildingName = locationInfo?.building?.name || locationInfo?.building?.code || 'Unknown Building'
+      const locationName = locationInfo?.name || locationInfo?.room_number || id
       await auditService.logEvent({
         action_type: 'DELETE',
         entity_type: 'location',
         entity_id: id,
-        description: `Deleted location ${id}`,
+        old_values: locationInfo ? { 
+          name: locationInfo.name, 
+          room_number: locationInfo.room_number,
+          building: buildingName
+        } : null,
+        description: `Deleted location ${locationName} in ${buildingName}`,
       })
     } catch (e) {
       console.warn('Audit log failed (delete location):', e)

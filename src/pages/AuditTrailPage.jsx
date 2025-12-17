@@ -260,7 +260,7 @@ export default function AuditTrailPage() {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {log.user_email || log.user_id || 'System'}
+                      {log.user_email || (log.user_id ? `User ${log.user_id.substring(0, 8)}...` : 'System')}
                     </Typography>
                   </TableCell>
                   <TableCell>

@@ -146,6 +146,19 @@ export const pathService = {
   },
 
   async delete(id) {
+    // Fetch path info before deletion for audit trail
+    let pathInfo = null
+    try {
+      const { data } = await supabase
+        .from('paths')
+        .select('path_name, path_type')
+        .eq('path_id', id)
+        .single()
+      pathInfo = data
+    } catch (e) {
+      console.warn('Failed to fetch path info before deletion:', e)
+    }
+
     // Waypoints will be deleted automatically due to CASCADE
     const { error } = await supabase
       .from('paths')
@@ -158,7 +171,8 @@ export const pathService = {
         action_type: 'DELETE',
         entity_type: 'path',
         entity_id: id?.toString(),
-        description: `Deleted path ${id}`,
+        old_values: pathInfo ? { name: pathInfo.path_name, type: pathInfo.path_type } : null,
+        description: `Deleted path ${pathInfo?.path_name || id}`,
       })
     } catch (e) {
       console.warn('Audit log failed (delete path):', e)

@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase'
 
 export const auditService = {
   async getAll(filters = {}) {
+    // Fetch audit logs
     let query = supabase
       .from('audit_logs')
       .select('*')
@@ -24,10 +25,37 @@ export const auditService = {
       query = query.lte('created_at', filters.end_date)
     }
 
-    const { data, error } = await query.limit(filters.limit || 1000)
+    const { data: logs, error } = await query.limit(filters.limit || 1000)
     
     if (error) throw error
-    return data
+    
+    // Fetch user emails for logs that have user_id but no user_email
+    const userIdsToFetch = [...new Set(
+      logs
+        .filter(log => log.user_id && !log.user_email)
+        .map(log => log.user_id)
+    )]
+    
+    let userEmailMap = {}
+    if (userIdsToFetch.length > 0) {
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, email')
+        .in('id', userIdsToFetch)
+      
+      if (!usersError && users) {
+        userEmailMap = users.reduce((acc, user) => {
+          acc[user.id] = user.email
+          return acc
+        }, {})
+      }
+    }
+    
+    // Enrich logs with user emails from users table
+    return logs.map(log => ({
+      ...log,
+      user_email: log.user_email || userEmailMap[log.user_id] || null
+    }))
   },
 
   async logEvent(eventData) {

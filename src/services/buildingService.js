@@ -132,6 +132,19 @@ export const buildingService = {
   },
 
   async delete(id) {
+    // Fetch building info before deletion for audit trail
+    let buildingInfo = null
+    try {
+      const { data } = await supabase
+        .from('buildings')
+        .select('name, code')
+        .eq('id', id)
+        .single()
+      buildingInfo = data
+    } catch (e) {
+      console.warn('Failed to fetch building info before deletion:', e)
+    }
+
     const { error } = await supabase
       .from('buildings')
       .delete()
@@ -143,7 +156,8 @@ export const buildingService = {
         action_type: 'DELETE',
         entity_type: 'building',
         entity_id: id,
-        description: `Deleted building ${id}`,
+        old_values: buildingInfo ? { name: buildingInfo.name, code: buildingInfo.code } : null,
+        description: `Deleted building ${buildingInfo?.name || buildingInfo?.code || id}`,
       })
     } catch (e) {
       console.warn('Audit log failed (delete building):', e)
